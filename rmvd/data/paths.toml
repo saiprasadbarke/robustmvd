@@ -1,20 +1,20 @@
 [eth3d]
-    root = '/tmp/eth3d/'
+    root = '/misc/lmbraid19/barkes/robustmvd/data/eth3d/'
 
 [kitti]
-    root = '/tmp/kitti/'
+    root = '/misc/lmbraid19/barkes/robustmvd/data/kitti/'
 
 [dtu]
-    root = '/tmp/dtu/'
+    root = '/misc/lmbraid19/barkes/robustmvd/data/dtu/'
 
 [scannet]
-    root = '/tmp/scannet/'
+    root = '/misc/lmbraid19/barkes/robustmvd/data/scannet/'
 
 [tanks_and_temples]
-    root = '/tmp/tanks_and_temples/'
+    root = '/misc/lmbraid19/barkes/robustmvd/data/tanks_and_temples/'
 
 [flyingthings3d]
-    root = '/tmp/flyingthings3d/'
+    root = '/misc/lmbraid19/barkes/robustmvd/data/flyingthings3d/'
 
 [blendedmvs]
-    root = '/tmp/blendedmvs/'
+    root = '/misc/lmbraid19/barkes/robustmvd/data/blendedmvs/'

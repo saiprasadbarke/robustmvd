@@ -93,6 +93,20 @@ It is required to install additional dependencies. You might want to set up a ne
 pip install git+https://github.com/mapillary/inplace_abn.git@v1.0.11
 pip install kornia
 ```
+### `vis_mvsnet`
+This is the official implementation for the BMVC 2020 paper Visibility-aware Multi-view Stereo Network.
+"Visibility-aware Multi-view Stereo Network" by Zhang et al. 
+The model is avaialble at <https://github.com/jzhangbs/Vis-MVSNet.git>.
+
+#### Setup:
+From the directory of this `README` file, execute the script `scripts/setup_vis_mvsnet.sh` and specify the local
+directory to clone the original repository:
+```bash
+./scripts/setup_vis_mvsnet.sh /path/to/vis_mvsnet
+```
+
+Then specify the local directory `/path/to/vis_mvsnet` in the `wrappers/paths.toml` file (relative to the directory of  
+this `README`).
 
 ---
 
