@@ -7,13 +7,16 @@ from tqdm import tqdm
 
 
 def cp(a, b, verbose=True, followLinks=False):
-    os.system('cp -r %s %s "%s" "%s"' % ('-v' if verbose else '', '-L' if followLinks else '', a, b))
+    os.system(
+        'cp -r %s %s "%s" "%s"'
+        % ("-v" if verbose else "", "-L" if followLinks else "", a, b)
+    )
 
 
 def copy_rectified_images(in_base, out_base):
-    in_base = osp.join(in_base, 'Rectified')
+    in_base = osp.join(in_base, "Rectified")
     scans = os.listdir(in_base)
-    
+
     for scan in tqdm(scans, "Processed scans"):
         in_path = osp.join(in_base, scan)
         out_path = osp.join(out_base, scan)
@@ -30,7 +33,7 @@ def copy_rectified_images(in_base, out_base):
 
 
 def copy_gt_depths(in_base, out_base):
-    in_base = osp.join(in_base, 'dtu', 'Depths_raw')
+    in_base = osp.join(in_base, "dtu", "Depths_raw")
     scans = os.listdir(in_base)
 
     for scan in tqdm(scans, "Processed scans"):
@@ -49,7 +52,7 @@ def copy_gt_depths(in_base, out_base):
 
 
 def copy_points(in_base, out_base):
-    in_base = osp.join(in_base, 'Points', 'stl')
+    in_base = osp.join(in_base, "Points", "stl")
     scans = [x for x in os.listdir(in_base) if x.endswith(".ply")]
 
     for scan in tqdm(scans, "Processed scans"):
@@ -61,10 +64,10 @@ def copy_points(in_base, out_base):
         cp(in_path, out_path)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('in_path', type=str)
-    parser.add_argument('out_path', type=str)
+    parser.add_argument("in_path", type=str)
+    parser.add_argument("out_path", type=str)
     args = parser.parse_args()
 
     os.makedirs(args.out_path, exist_ok=True)
