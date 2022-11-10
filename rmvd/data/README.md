@@ -49,10 +49,10 @@ specify the download directory for the dataset:
 ./scripts/download_dtu.sh /path/to/DTU_raw
 ```
 
-Then, from the directory of this `README` file, execute the script `scripts/convert_dtu.sh` to bring the dataset in the
+Then, from the directory of this `README` file, execute the script `scripts/convert_dtu.py` to bring the dataset in the
 structure that is required by the dataloader:
 ```bash
-./scripts/convert_dtu.sh /path/to/DTU_raw /path/to/DTU
+./scripts/convert_dtu.py /path/to/DTU_raw /path/to/DTU
 ```
 
 Then specify the DTU directory (`/path/to/DTU`) in the `paths.toml` file. 
