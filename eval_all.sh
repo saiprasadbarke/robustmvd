@@ -48,3 +48,7 @@ python eval.py --eval_type robustmvd --model monodepth2_mono_stereo_640x192_wrap
 # mvsnet_pl_wrapped model:
 python eval.py --eval_type robustmvd --model mvsnet_pl_wrapped --inputs poses intrinsics depth_range --output ${OUT_BASE}/mvsnet_pl_wrapped/known_depth_range --eth3d_size 768 1152 --kitti_size 384 1280 --dtu_size 896 1216 --scannet_size 448 640 --tanks_and_temples_size 704 1280
 python eval.py --eval_type robustmvd --model mvsnet_pl_wrapped --inputs poses intrinsics --output ${OUT_BASE}/mvsnet_pl_wrapped/unknown_depth_range --eth3d_size 768 1152 --kitti_size 384 1280 --dtu_size 896 1216 --scannet_size 448 640 --tanks_and_temples_size 704 1280
+
+# vis_mvsnet_wrapped model:
+python eval.py --eval_type robustmvd --model vis_mvsnet_wrapped --inputs poses intrinsics depth_range --output ${OUT_BASE}/vis_mvsnet/known_depth_range --eth3d_size 768 1152 --kitti_size 384 1280 --dtu_size 896 1216 --scannet_size 448 640 --tanks_and_temples_size 704 1280
+python eval.py --eval_type robustmvd --model vis_mvsnet_wrapped --inputs poses intrinsics --output ${OUT_BASE}/vis_mvsnet/unknown_depth_range --eth3d_size 768 1152 --kitti_size 384 1280 --dtu_size 896 1216 --scannet_size 448 640 --tanks_and_temples_size 704 1280
