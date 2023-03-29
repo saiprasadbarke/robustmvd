@@ -73,7 +73,7 @@ The model is applied at a fixed input size of `width=640` and `height=192`. It t
 data at a specific downsampled resolution. Thus, don't use the `input_size` parameters of `Dataset` classes and of the
 `eval.py` and `inference.py` scripts, when using this model.
 
-### `mvsnet_pl`
+### `mvsnet_pl_wrapped`
 This is an unofficial implementation of the MVSNet model presented in the publication 
 "MVSNet: Depth Inference for Unstructured Multi-view Stereo" by Yao et al. 
 The model is wrapped around the unofficial implementation from <https://github.com/kwea123/MVSNet_pl>.
@@ -107,6 +107,81 @@ directory to clone the original repository:
 
 Then specify the local directory `/path/to/vis_mvsnet` in the `wrappers/paths.toml` file (relative to the directory of  
 this `README`).
+
+### `midas_big_v2_1_wrapped`
+This is the "MiDaS" model presented in the publication 
+"Towards Robust Monocular Depth Estimation: Mixing Datasets for Zero-shot Cross-dataset Transfer" by Ranftl et al. 
+The model is wrapped around the original implementation from <https://github.com/isl-org/MiDaS>, where it is 
+indicated as `Big models: MiDaS v2.1`.
+
+#### Setup:
+From the directory of this `README` file, execute the script `scripts/setup_midas.sh` and specify the local
+directory to clone the original repository:
+```bash
+./scripts/setup_midas.sh /path/to/midas
+```
+
+Then specify the local directory `/path/to/midas` in the `wrappers/paths.toml` file (relative to the directory of  
+this `README`).
+
+It is not necessary to install additional dependencies.
+
+### `vis_mvsnet_wrapped`
+This is the Vis-MVSNet model presented in the publication "Visibility-aware Multi-view Stereo Network" by Zhang et al.
+The model is wrapped around the original implementation from <https://github.com/jzhangbs/Vis-MVSNet.git>.
+
+#### Setup:
+From the directory of this `README` file, execute the script `scripts/setup_vis_mvsnet.sh` and specify the local
+directory to clone the original repository:
+```bash
+./scripts/setup_vis_mvsnet.sh /path/to/vis_mvsnet
+```
+
+Then specify the local directory `/path/to/vis_mvsnet` in the `wrappers/paths.toml` file (relative to the directory of  
+this `README`).
+
+It is not necessary to install additional dependencies.
+
+### `cvp_mvsnet_wrapped`
+This is the CVP-MVSNet model presented in the publication 
+"Cost Volume Pyramid Based Depth Inference for Multi-View Stereo" by Yang et al.
+The model is wrapped around the original implementation from <https://github.com/JiayuYANG/CVP-MVSNet>.
+
+#### Setup:
+From the directory of this `README` file, execute the script `scripts/setup_cvp_mvsnet.sh` and specify the local
+directory to clone the original repository:
+```bash
+./scripts/setup_cvp_mvsnet.sh /path/to/cvp_mvsnet
+```
+
+Then specify the local directory `/path/to/cvp_mvsnet` in the `wrappers/paths.toml` file (relative to the directory of  
+this `README`).
+
+It is not necessary to install additional dependencies.
+
+#### Misc:
+With the original implementation, the number of calculated depth hypotheses is sometimes too small. We apply a small
+patch (see `cvp_mvsnet.patch` file) to fix this.
+
+Further, the implementation does not support running the model with a single source view. It is therefore not possible
+to evaluate the model with the `quasi-optimal` view selection, but only with the `nearest` view selection strategy.
+
+### `patchmatchnet_wrapped`
+This is the PatchmatchNet model presented in the publication 
+"PatchmatchNet: Learned Multi-View Patchmatch Stereo" by Wang et al.
+The model is wrapped around the original implementation from <https://github.com/FangjinhuaWang/PatchmatchNet>.
+
+#### Setup:
+From the directory of this `README` file, execute the script `scripts/setup_patchmatchnet.sh` and specify the local
+directory to clone the original repository:
+```bash
+./scripts/setup_patchmatchnet.sh /path/to/patchmatchnet
+```
+
+Then specify the local directory `/path/to/patchmatchnet` in the `wrappers/paths.toml` file (relative to the directory 
+of this `README`).
+
+It is not necessary to install additional dependencies.
 
 ---
 
@@ -217,7 +292,7 @@ The conversion may for example include converting the inputs to `torch.Tensor`, 
 normalizing the images, etc.
 
 ### The `forward` function (for non-pytorch model this function is named `__call__`)
-The `_forward` function of each model expects data in the model-specific format and returns model-specific outputs.
+The `forward` function of each model expects data in the model-specific format and returns model-specific outputs.
 
 Hence, in case all input data is already in the format required by the model, you can also do `model(**sample)`. 
 This is used in the `rmvd` training code. 
