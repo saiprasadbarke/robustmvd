@@ -57,7 +57,6 @@ class VisMvsnetWrapped(ModelWrappers):
     ):
         device = get_torch_model_device(self)
 
-        N = images[0].shape[0]
         orig_ht, orig_wd = images[0].shape[-2:]
         ht, wd = int(math.ceil(orig_ht / 64.0) * 64.0), int(
             math.ceil(orig_wd / 64.0) * 64.0
@@ -74,43 +73,17 @@ class VisMvsnetWrapped(ModelWrappers):
             image_batch = image_batch.transpose(0, 2, 3, 1)
             for image in image_batch:
                 image = self.input_transform(image.astype(np.uint8)).float()
-                print(image.shape)
                 image = torch.flip(image, [0])  # RGB to BGR
                 tmp_images.append(image)
 
             image_batch = torch.stack(tmp_images)
             images[idx] = image_batch
 
-            # proj_mats = []
-            # for idx, (intrinsic_batch, pose_batch) in enumerate(zip(intrinsics, poses)):
-            #     proj_mat_batch = []
-            #     for intrinsic, pose, cur_keyview_idx in zip(
-            #         intrinsic_batch, pose_batch, keyview_idx
-            #     ):
-
-            #         scale_arr = np.array([[0.25] * 3, [0.25] * 3, [1.0] * 3])  # 3, 3
-            #         intrinsic = (
-            #             intrinsic * scale_arr
-            #         )  # scale intrinsics to 4x downsampling that happens within the model
-
-            #         proj_mat = pose
-            #         proj_mat[:3, :4] = intrinsic @ proj_mat[:3, :4]
-            #         proj_mat = proj_mat.astype(np.float32)
-
-            #         if idx == cur_keyview_idx:
-            #             proj_mat = np.linalg.inv(proj_mat)
-
-            #         proj_mat_batch.append(proj_mat)
-
-            #     proj_mat_batch = np.stack(proj_mat_batch)
-            #     proj_mats.append(proj_mat_batch)
-        if depth_range is None:
-            depth_range = [0.2, 100]  # In meters
+        depth_range = [0.2, 100] if depth_range is None else depth_range
         min_depth, max_depth = depth_range
         step_size = (max_depth - min_depth) / self.num_sampling_steps
 
         cams = []
-        ref_to_key_transform = None
         for idx, (intrinsic, pose) in enumerate(zip(intrinsics, poses)):
 
             cam = np.zeros((2, 4, 4), dtype=np.float32)
@@ -122,10 +95,9 @@ class VisMvsnetWrapped(ModelWrappers):
             cam[1, 3, 3] = max_depth
 
             cam = cam[np.newaxis, :]  # 1, 2, 4, 4
-            print(cam.shape)
             cams.append(cam)
 
-        images, keyview_idx, cams = to_torch((images, keyview_idx, cams), device=device)  # type: ignore
+        images, keyview_idx, cams = to_torch((images, keyview_idx, cams), device=device)
 
         sample = {
             "images": images,
@@ -144,17 +116,11 @@ class VisMvsnetWrapped(ModelWrappers):
         images_source = torch.stack(images_source, 1)  # N, num_views, 3, H, W
         cam_source = torch.stack(cam_source, 1)  # N, num_views, 4, 4
 
-        # pred_depth, pred_depth_confidence = self.model.forward(
-        #     images, proj_mats, depth_samples
-        # )
-
         inp = {
             "ref": image_key,
             "ref_cam": cam_key,
             "srcs": images_source,
             "srcs_cam": cam_source,
-            # 'gt': torch.zeros_like(image_key[:,:1,:,:]),
-            # 'masks': torch.zeros_like(image_others[:,:,:1,:,:]),
         }
 
         cas_depth_num = [64, 32, 16]
@@ -166,10 +132,9 @@ class VisMvsnetWrapped(ModelWrappers):
         pred_depth_confidence = prob_maps[2]
         pred_depth_uncertainty = 1 - pred_depth_confidence
 
-        pred_depth = pred_depth.unsqueeze(1)
-        pred_depth_uncertainty = pred_depth_uncertainty.unsqueeze(1)
-        aux = {}
         pred = {"depth": pred_depth, "depth_uncertainty": pred_depth_uncertainty}
+        aux = {}
+
         return pred, aux
 
     def output_adapter(self, model_output):
@@ -184,12 +149,13 @@ def vis_mvsnet_wrapped(
     assert pretrained and (
         weights is None
     ), "Model supports only pretrained=True, weights=None."
-    # Arguments of init are added through cfg
+
     cfg = {
         "num_sampling_steps": 192,
     }
+
     model = build_model_with_cfg(
-        model_cls=VisMvsnetWrapped,
+        model_cls=VisMVSNet_Wrapped,
         cfg=cfg,
         weights=None,
         train=train,

@@ -9,3 +9,6 @@ tqdm
 opencv-python
 scikit-image
 black
+pyqt5
+dill
+easydict

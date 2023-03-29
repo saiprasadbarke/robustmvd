@@ -6,3 +6,6 @@
 
 [vis_mvsnet]
     root = '/tmp/vis_mvsnet'
+    
+[midas]
+    root = '/tmp/midas'

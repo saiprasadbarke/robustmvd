@@ -36,6 +36,16 @@ class RobustMultiViewDepthBenchmark:
             considered. Default: None.
         min_source_views. Minimum number of source views provided to the model.
             If max_source_views is not None, is set to min(min_source_views, max_source_views). Default: 1.
+        view_ordering: Ordering of source views during the evaluation.
+            Options are "quasi-optimal" and "nearest". Default: "quasi-optimal".
+            "quasi-optimal": evaluate predicted depth maps for all (keyview, sourceview) pairs.
+                Order source views according to the prediction accuracy. Increase source view set based on
+                the obtained ordering and re-evaluate for each additional source view.
+                Log results based on the number of source views. Log best results as overall results.
+            "nearest": evaluate predicted depth maps for increasing number of source views. Increase source
+                view set based on the ordering of views in the sample, i.e. based on the distance between source
+                view indices and the keyview index. Log results based on the number of source views.
+                Log best results as overall results.
         eval_uncertainty: Evaluate predicted uncertainty (pred_depth_uncertainty) if available.
             Increases evaluation time.
         sparse_pred: Predicted depth is sparse. Invalid predictions are indicated by 0 values and ignored in
@@ -48,6 +58,7 @@ class RobustMultiViewDepthBenchmark:
                  alignment: Optional[str] = None,
                  max_source_views: Optional[int] = None,
                  min_source_views: int = 1,
+                 view_ordering: str = "quasi-optimal",
                  eval_uncertainty: bool = True,
                  sparse_pred: bool = False,
                  verbose: bool = True,
@@ -67,6 +78,7 @@ class RobustMultiViewDepthBenchmark:
         self.alignment = alignment
         self.max_source_views = max_source_views
         self.min_source_views = min_source_views if max_source_views is None else min(min_source_views, max_source_views)
+        self.view_ordering = view_ordering if (self.max_source_views is None) or (self.max_source_views > 0) else None
         self.eval_uncertainty = eval_uncertainty
         self.sparse_pred = sparse_pred
 
@@ -103,6 +115,7 @@ class RobustMultiViewDepthBenchmark:
                  tanks_and_temples_size: Optional[Tuple[int, int]] = None,
                  samples: Optional[Union[int, Sequence[int]]] = None,
                  qualitatives: Union[int, Sequence[int]] = 2,
+                 exp_name: Optional[str] = None,
                  **_):
         """Run Robust Multi-view Depth Benchmark evaluation for a model.
 
@@ -122,6 +135,7 @@ class RobustMultiViewDepthBenchmark:
                 the indices of samples that should be evaluated. None evaluates all samples.
             qualitatives: Integer that indicates the number of qualitatives that should be logged or list that indicates
                 the indices of samples for which qualitatives should be logged. -1 logs qualitatives for all samples.
+            exp_name: Name of the experiment. Optional.
 
         Returns:
             Results of the evaluation.
@@ -145,14 +159,15 @@ class RobustMultiViewDepthBenchmark:
                 out_dir = None
 
             eval = MultiViewDepthEvaluation(out_dir=out_dir, inputs=self.inputs, alignment=self.alignment,
-                                            view_ordering="quasi-optimal", max_source_views=self.max_source_views,
+                                            view_ordering=self.view_ordering, max_source_views=self.max_source_views,
                                             min_source_views=self.min_source_views,
                                             eval_uncertainty=self.eval_uncertainty, clip_pred_depth=True,
                                             sparse_pred=self.sparse_pred, verbose=self.verbose)
             # TODO: pass tqdm progress bar and set verbose to False
 
-            dataset = create_dataset(dataset_name=dataset_name, dataset_type="mvd", input_size=input_size)
-            result = eval(dataset=dataset, model=model, samples=samples, qualitatives=qualitatives, burn_in_samples=3)
+            dataset = create_dataset(dataset_name_or_path=dataset_name, dataset_type="mvd", input_size=input_size)
+            result = eval(dataset=dataset, model=model, samples=samples, qualitatives=qualitatives, burn_in_samples=3,
+                          exp_name=exp_name)
             result = prepend_level(result, "dataset", dataset_name, axis=1)
             results.append(result)
             print()
