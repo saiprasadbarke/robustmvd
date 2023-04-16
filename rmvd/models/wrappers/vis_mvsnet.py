@@ -142,7 +142,7 @@ class VisMvsnetWrapped(ModelWrappers):
         return to_numpy(pred), to_numpy(aux)
 
 
-@register_model
+@register_model(trainable=False)
 def vis_mvsnet_wrapped(
     pretrained=True, weights=None, train=False, num_gpus=1, **kwargs
 ):

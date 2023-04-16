@@ -101,7 +101,7 @@ class Monodepth2_Wrapped(nn.Module):
         return to_numpy(pred), to_numpy(aux)
 
 
-@register_model
+@register_model(trainable=False)
 def monodepth2_mono_stereo_1024x320_wrapped(
     pretrained=True, weights=None, train=False, num_gpus=1, **kwargs
 ):
@@ -119,7 +119,7 @@ def monodepth2_mono_stereo_1024x320_wrapped(
     return model
 
 
-@register_model
+@register_model(trainable=False)
 def monodepth2_mono_stereo_640x192_wrapped(
     pretrained=True, weights=None, train=False, num_gpus=1, **kwargs
 ):

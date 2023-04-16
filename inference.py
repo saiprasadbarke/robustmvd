@@ -12,7 +12,7 @@ from PIL import Image
 from skimage.transform import resize
 
 from rmvd import create_model, list_models
-from rmvd.utils import invert_transform, vis
+from rmvd.utils import invert_transform, vis_2d_array
 
 
 def load_data(path):
@@ -65,14 +65,16 @@ def write_pred(pred, output_path, h_orig, w_orig):
     )
 
     with np.errstate(divide="ignore", invalid="ignore"):
-        pred_invdepth = np.nan_to_num(
-            1 / pred_depth, copy=False, nan=0, posinf=0, neginf=0
-        )
+        pred_invdepth = 1.0 / pred_depth
 
     np.save(osp.join(output_path, "pred_depth.npy"), pred_depth)
     np.save(osp.join(output_path, "pred_invdepth.npy"), pred_invdepth)
-    vis(pred_invdepth).save(osp.join(args.output_path, "pred_invdepth.png"))
-    vis(pred_depth).save(osp.join(args.output_path, "pred_depth.png"))
+    vis_2d_array(pred_invdepth, mark_invalid=True).save(
+        osp.join(args.output_path, "pred_invdepth.png")
+    )
+    vis_2d_array(pred_depth, mark_invalid=True).save(
+        osp.join(args.output_path, "pred_depth.png")
+    )
 
     if "depth_uncertainty" in pred:
         pred_depth_uncertainty = pred["depth_uncertainty"]
@@ -86,9 +88,14 @@ def write_pred(pred, output_path, h_orig, w_orig):
             osp.join(args.output_path, "pred_depth_uncertainty.npy"),
             pred_depth_uncertainty,
         )
-        vis(pred_depth_uncertainty, image_range_text_off=True).save(
+        vis_2d_array(pred_depth_uncertainty, image_range_text_off=True).save(
             osp.join(args.output_path, "pred_depth_uncertainty.png")
         )
+    else:
+        if osp.exists(osp.join(args.output_path, "pred_depth_uncertainty.png")):
+            os.remove(osp.join(args.output_path, "pred_depth_uncertainty.png"))
+        if osp.exists(osp.join(args.output_path, "pred_depth_uncertainty.npy")):
+            os.remove(osp.join(args.output_path, "pred_depth_uncertainty.npy"))
 
 
 @torch.no_grad()
