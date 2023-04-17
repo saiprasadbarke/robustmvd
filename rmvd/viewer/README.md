@@ -19,13 +19,13 @@ Features of the data viewer:
 ## Usage
 ### Viewing a dataset
 #### From the command line
-The script `data-viewer.py` in the root directory of the `robustmvd` repository can be used to view a dataset, for
+The script `data_viewer.py` in the root directory of the `robustmvd` repository can be used to view a dataset, for
 example ScanNet:
 ```bash
-./data-viewer.py scannet.robustmvd.mvd  # optional: --layout layout_name, e.g. --layout all_images
+./data_viewer.py scannet.robustmvd.mvd  # optional: --layout layout_name, e.g. --layout all_images
 ```
 
-For further details, execute `./data-viewer.py --help`.
+For further details, execute `./data_viewer.py --help`.
 
 #### From python code
 The data viewer can also be used from python code as follows:
@@ -37,7 +37,7 @@ run_viewer(dataset)  # optional layout=layout_name, e.g. run_viewer(dataset, lay
 
 ### Viewing evaluation results
 #### From the command line
-The script `data-viewer.py` in the root directory of the `robustmvd` repository can be used to view evaluation results
+The script `data_viewer.py` in the root directory of the `robustmvd` repository can be used to view evaluation results
 by specifying the path to the evaluation outputs, for example:
 ```bash
 python eval.py --model robust_mvd_5M --dataset scannet --eval_type mvd --inputs poses intrinsics --output /tmp/eval_output --input_size 448 640
@@ -47,7 +47,7 @@ python eval.py --model robust_mvd_5M --dataset scannet --eval_type mvd --inputs 
 Or in case of evaluating on the Robust Multi-view Depth Benchmark:
 ```bash
 python eval.py --model robust_mvd_5M --eval_type robustmvd --inputs poses intrinsics --output /tmp/eval_benchmark --eth3d_size 768 1152 --kitti_size 384 1280 --dtu_size 896 1216 --scannet_size 448 640 --tanks_and_temples_size 704 1280
-./data-viewer.py /tmp/eval_benchmark/robust_mvd_5M/scannet.robustmvd.mvd
+./data_viewer.py /tmp/eval_benchmark/robust_mvd_5M/scannet.robustmvd.mvd
 ```
 
 ---
