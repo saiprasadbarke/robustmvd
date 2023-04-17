@@ -126,14 +126,14 @@ The following describes the format for each dataset type.
 
 ### Multi-view depth (mvd) data format
 For mvd datasets each sample is a dictionary with the following keys:
-- `images`: a list of images. Each image is a numpy array of shape (3, H, W), type float32 and values from 0 to 255
-- `poses`: a list of camera poses. Each camera pose is numpy array of shape (4, 4) and type float32. The reference
+- `images`: a list of images. Each image is a `numpy.array` of shape (3, H, W), type float32 and values from 0 to 255
+- `poses`: a list of camera poses. Each camera pose is `numpy.array` of shape (4, 4) and type float32. The reference
   coordinate system is the keyview coordinate system (for more information, see below)
-- `intrinsics`: a list of camera intrinsics. Each camera intrinsic is numpy array of shape (3, 3) and type float32
+- `intrinsics`: a list of camera intrinsics. Each camera intrinsic is `numpy.array` of shape (3, 3) and type float32
 - `keyview_idx`: integer that indicates the index of the keyview in the list of views, e.g. `images[keyview_idx]` is the
   keyview image
-- `depth`: depth map for the keyview. This is a numpy array of shape (1, H, W) and type float32
-- `invdepth`: inverse depth map for the keyview. This is a numpy array of shape (1, H, W) and type float32
+- `depth`: depth map for the keyview. This is a `numpy.array` of shape (1, H, W) and type float32
+- `invdepth`: inverse depth map for the keyview. This is a `numpy.array` of shape (1, H, W) and type float32
 - `depth_range`: minimum and maximum depth values for the view. This is a tuple of the form (min_depth, max_depth)
 
 ### Intrinsics and camera poses
@@ -169,13 +169,13 @@ Invalid inverse depth values are set to 0.
 ### Batched data format
 Data can be loaded as batches of `N >= 1` samples. In this case, a batch dimension is added. A "batched" sample is
 a dictionary the same keys as described above, but different shapes:
-- `images`: a list of images. Each image is a numpy array of shape (N, 3, H, W), type float32 and values from 0 to 255
-- `poses`: a list of camera poses. Each camera pose is numpy array of shape (N, 4, 4) and type float32
-- `intrinsics`: a list of camera intrinsics. Each camera intrinsic is numpy array of shape (N, 3, 3) and type float32
-- `keyview_idx`: numpy array of shape (N,) and type int64. Each element indicates the index of the keyview in each
+- `images`: a list of images. Each image is a `numpy.array` of shape (N, 3, H, W), type float32 and values from 0 to 255
+- `poses`: a list of camera poses. Each camera pose is `numpy.array` of shape (N, 4, 4) and type float32
+- `intrinsics`: a list of camera intrinsics. Each camera intrinsic is `numpy.array` of shape (N, 3, 3) and type float32
+- `keyview_idx`: `numpy.array` of shape (N,) and type int64. Each element indicates the index of the keyview in each
   sample in the batch
-- `depth`: depth map for the keyview. This is a numpy array of shape (N, 1, H, W) and type float32
-- `invdepth`: inverse depth map for the keyview. This is a numpy array of shape (N, 1, H, W) and type float32
+- `depth`: depth map for the keyview. This is a `numpy.array` of shape (N, 1, H, W) and type float32
+- `invdepth`: inverse depth map for the keyview. This is a `numpy.array` of shape (N, 1, H, W) and type float32
 - `depth_range`: list of length 2 and where first element is a tuple with N floats that indicates the minimum depth
   values of each sample in the batch and the second element is a tuple with N floats that indicates the maximum depth
   values of each sample in the batch
