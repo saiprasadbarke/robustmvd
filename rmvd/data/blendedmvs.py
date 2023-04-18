@@ -98,14 +98,18 @@ def load_intrinsics(root, path):
 
 
 def load_depth(root, path):
+    """This function loads rendered depth maps from a file on the disk and returns it as a numpy array"""
     path = f"rendered_depth_maps/{path:08d}.pfm"
     depth = readPFM(osp.join(root, path))
-    depth = np.nan_to_num(depth, posinf=0.0, neginf=0.0, nan=0.0)
-    depth = np.expand_dims(depth, 0).astype(np.float32)  # 1HW
+    depth = np.nan_to_num(
+        depth, posinf=0.0, neginf=0.0, nan=0.0
+    )  # Replace NaNs with 0.0
+    depth = np.expand_dims(depth, 0).astype(np.float32)  # (1,H,W)
     return depth  # 1, H, W, np.float32
 
 
 def load(key, root, val):
+    """This function is a general function that dispatches to the appropriate load function above based on the key argument. If the value of the key is a list, then each element of the list is recursively loaded using the same load function. Otherwise, the appropriate load function is called based on the key, and the result is returned."""
     if isinstance(val, list):
         return [load(key, root, v) for v in val]
     else:
