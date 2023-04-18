@@ -50,9 +50,10 @@ def readPFM(file):  # TODO: move to rmvd utils
 
 
 def load_image(root, path):
+    """This function loads an image from disk and returns it as a numpy array"""
     path = f"blended_images/{path:08d}_masked.jpg"
     img_path = osp.join(root, path)
-    img = np.array(Image.open(img_path))
+    img = np.array(Image.open(img_path))  # H,W,3 ; dtype np.uint8
     img = img.transpose(2, 0, 1).astype(np.float32)  # 3,H,W ; dtype np.uint8
     return img
 
