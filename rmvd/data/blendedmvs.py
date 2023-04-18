@@ -59,38 +59,42 @@ def load_image(root, path):
 
 
 def load_pose(root, path):
+    """This function loads the camera pose from a file on the disk and returns it as a numpy array"""
     path = f"cams/{path:08d}_cam.txt"
     pose_path = osp.join(root, path)
     with open(pose_path) as pose_file:
         pose_lines = [x[:-1] for x in pose_file.readlines()][1:5]
-        pose_eles = [float(x) for line in pose_lines for x in line.split()]
-        pose = np.array(
+        pose_elements = [float(x) for line in pose_lines for x in line.split()]
+        pose_matrix = np.array(
             [
-                pose_eles[0:4],
-                pose_eles[4:8],
-                pose_eles[8:12],
-                pose_eles[12:16],
+                pose_elements[0:4],
+                pose_elements[4:8],
+                pose_elements[8:12],
+                pose_elements[12:16],
             ],
             dtype=np.float32,
         )
-    return pose  # 4, 4
+    return pose_matrix  # 4, 4
 
 
 def load_intrinsics(root, path):
+    """This function loads camera intrincs from a file on the disk and returns it as a numpy array"""
     path = f"cams/{path:08d}_cam.txt"
     pose_path = osp.join(root, path)
     with open(pose_path) as pose_file:
         intrinsic_lines = [x[:-1] for x in pose_file.readlines()][7:10]
-        intrinsic_eles = [float(x) for line in intrinsic_lines for x in line.split()]
-        intrinsic = np.array(
+        intrinsic_elements = [
+            float(x) for line in intrinsic_lines for x in line.split()
+        ]
+        intrinsic_matrix = np.array(
             [
-                intrinsic_eles[0:3],
-                intrinsic_eles[3:6],
-                intrinsic_eles[6:9],
+                intrinsic_elements[0:3],
+                intrinsic_elements[3:6],
+                intrinsic_elements[6:9],
             ],
             dtype=np.float32,
         )
-    return intrinsic  # 3, 3
+    return intrinsic_matrix  # 3, 3
 
 
 def load_depth(root, path):
