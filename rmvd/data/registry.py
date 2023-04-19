@@ -1,7 +1,7 @@
 """Dataset Registry.
 
 Maintains a registry of datasets.
-Based on the model registry from the timm package ( https://github.com/rwightman/pytorch-image-models ).
+Based on the model registry from the timm package ( https://github.com/huggingface/pytorch-image-models ).
 """
 
 

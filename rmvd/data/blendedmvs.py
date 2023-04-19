@@ -8,7 +8,7 @@ from .dataset import Dataset, Sample
 from .registry import register_default_dataset
 from .layouts import MVDUnstructuredDefaultLayout, AllImagesLayout
 
-
+# To understand more about the functions below, see the following: https://github.com/YoYo000/BlendedMVS
 def readPFM(file):  # TODO: move to rmvd utils
     """This function reads in a PFM (Portable Float Map) file and returns the data as a numpy array. PFMs are commonly used to store depth maps."""
     file = open(file, "rb")
