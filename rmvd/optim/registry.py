@@ -1,6 +1,6 @@
 """Optimizer registry.
 
-Based on the model registry from the timm package ( https://github.com/rwightman/pytorch-image-models ).
+Based on the model registry from the timm package ( https://github.com/huggingface/pytorch-image-models ).
 """
 
 
@@ -29,7 +29,9 @@ def has_optimizer(name):
 
 def get_optimizer(name):
     """Get optimizer entrypoint by name."""
-    assert has_optimizer(name), f'The requested optimizer "{name}" does not exist. Available optimizers are: {" ".join(list_optimizers())}'
+    assert has_optimizer(
+        name
+    ), f'The requested optimizer "{name}" does not exist. Available optimizers are: {" ".join(list_optimizers())}'
     return _optimizer_entrypoints[name]
 
 
@@ -54,5 +56,7 @@ def has_scheduler(name):
 
 def get_scheduler(name):
     """Get scheduler entrypoint by name."""
-    assert has_scheduler(name), f'The requested scheduler "{name}" does not exist. Available schedulers are: {" ".join(list_schedulers())}'
+    assert has_scheduler(
+        name
+    ), f'The requested scheduler "{name}" does not exist. Available schedulers are: {" ".join(list_schedulers())}'
     return _scheduler_entrypoints[name]

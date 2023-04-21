@@ -1,6 +1,6 @@
 """Loss registry.
 
-Based on the model registry from the timm package ( https://github.com/rwightman/pytorch-image-models ).
+Based on the model registry from the timm package ( https://github.com/huggingface/pytorch-image-models ).
 """
 
 _loss_entrypoints = {}
@@ -27,5 +27,7 @@ def has_loss(name):
 
 def get_loss(name):
     """Get loss entrypoint by name."""
-    assert has_loss(name), f'The requested loss "{name}" does not exist. Available losses are: {" ".join(list_losses())}'
+    assert has_loss(
+        name
+    ), f'The requested loss "{name}" does not exist. Available losses are: {" ".join(list_losses())}'
     return _loss_entrypoints[name]
