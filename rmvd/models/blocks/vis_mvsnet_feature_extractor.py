@@ -11,7 +11,7 @@ import torch.nn as nn
 
 class FeatExt(nn.Module):
     """
-    This FeatExt (Feature Extraction) class is a neural network module that combines an initial convolution layer, a UNet, and three final convolution layers to extract features from the input data. The three convolution layers are used to process the output features from the UNet at three different scales. Refer to the 'multi_scale' attribute of the forward function in the UNet class. These extracted features are used later on to construct the cost volumes at three different resolutions. The FeatExt class is used in the VisMVSnetModel class.
+    This FeatExt (Feature Extraction) class is a neural network module that combines an initial 2D convolution layer, a 2D UNet, and three final 2D convolution layers to extract features from the input data. The three convolution layers are used to process the output features from the UNet at three different scales. Refer to the 'multi_scale' attribute of the forward function in the UNet class. These extracted features are used later on to construct the cost volumes at three different resolutions. The FeatExt class is used in the VisMVSnetModel class.
     """
 
     def __init__(self):
