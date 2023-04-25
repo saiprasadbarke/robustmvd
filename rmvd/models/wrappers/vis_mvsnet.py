@@ -155,7 +155,7 @@ def vis_mvsnet_wrapped(
     }
 
     model = build_model_with_cfg(
-        model_cls=VisMVSNet_Wrapped,
+        model_cls=VisMvsnetWrapped,
         cfg=cfg,
         weights=None,
         train=train,
