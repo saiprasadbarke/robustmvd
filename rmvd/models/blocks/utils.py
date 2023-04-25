@@ -1,5 +1,5 @@
 # Standard Imports
-from typing import List
+from typing import List, Union, Tuple
 
 # Local Imports
 
@@ -7,6 +7,7 @@ from typing import List
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import numpy as np
 
 
 def conv(in_planes, out_planes, kernel_size=3, stride=1):
@@ -208,3 +209,35 @@ def homography_warping(input, H):  # nchw, n33/nhw33 -> nchw
         )  # nhw2
     warped = interpolate(input, warped_coord)
     return warped  # nchw
+
+
+def scale_camera(cam: Union[np.ndarray, torch.Tensor], scale: Union[Tuple, float] = 1):
+    """resize input in order to produce sampled depth map"""
+    if type(scale) != tuple:
+        scale = (scale, scale)
+    if type(cam) == np.ndarray:
+        new_cam = np.copy(cam)
+        # focal:
+        new_cam[1, 0, 0] = cam[1, 0, 0] * scale[0]
+        new_cam[1, 1, 1] = cam[1, 1, 1] * scale[1]
+        # principle point:
+        new_cam[1, 0, 2] = cam[1, 0, 2] * scale[0]
+        new_cam[1, 1, 2] = cam[1, 1, 2] * scale[1]
+    elif type(cam) == torch.Tensor:
+        new_cam = cam.clone()
+        # focal:
+        new_cam[..., 1, 0, 0] = cam[..., 1, 0, 0] * scale[0]
+        new_cam[..., 1, 1, 1] = cam[..., 1, 1, 1] * scale[1]
+        # principle point:
+        new_cam[..., 1, 0, 2] = cam[..., 1, 0, 2] * scale[0]
+        new_cam[..., 1, 1, 2] = cam[..., 1, 1, 2] * scale[1]
+    # elif type(cam) == tf.Tensor:
+    #     scale_tensor = np.ones((1, 2, 4, 4))
+    #     scale_tensor[0, 1, 0, 0] = scale[0]
+    #     scale_tensor[0, 1, 1, 1] = scale[1]
+    #     scale_tensor[0, 1, 0, 2] = scale[0]
+    #     scale_tensor[0, 1, 1, 2] = scale[1]
+    #     new_cam = cam * scale_tensor
+    else:
+        raise TypeError
+    return new_cam
