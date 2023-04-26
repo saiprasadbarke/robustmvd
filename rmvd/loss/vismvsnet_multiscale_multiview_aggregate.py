@@ -9,9 +9,14 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-class Loss(nn.Module):  # TODO
+class VismvnsetMultiscaleMultiviewAggregateLoss(nn.Module):  # TODO
     def __init__(self):
-        super(Loss, self).__init__()
+        super(VismvnsetMultiscaleMultiviewAggregateLoss, self).__init__()
+
+    @property
+    def name(self):
+        name = type(self).__name__
+        return name
 
     def forward(
         self, outputs, gt, masks, ref_cam, max_d, occ_guide=False, mode="soft"
