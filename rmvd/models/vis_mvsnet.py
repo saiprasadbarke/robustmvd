@@ -28,8 +28,90 @@ class VisMvsnet(nn.Module):
         self.stage2 = SingleStage()
         self.stage3 = SingleStage()
 
-    # def forward(self, images, poses, intrinsics, keyview_idx, **_):
-    #    pass
+    def input_adapter(
+        self, images, keyview_idx, poses=None, intrinsics=None, depth_range=None
+    ):
+        device = get_torch_model_device(self)
+
+        orig_ht, orig_wd = images[0].shape[-2:]
+        ht, wd = int(math.ceil(orig_ht / 64.0) * 64.0), int(
+            math.ceil(orig_wd / 64.0) * 64.0
+        )
+        if (orig_ht != ht) or (orig_wd != wd):
+            resized = Resize(size=(ht, wd))(
+                {"images": images, "intrinsics": intrinsics}
+            )
+            images = resized["images"]
+            intrinsics = resized["intrinsics"]
+
+        for idx, image_batch in enumerate(images):
+            tmp_images = []
+            image_batch = image_batch.transpose(0, 2, 3, 1)
+            for image in image_batch:
+                image = self.input_transform(image.astype(np.uint8)).float()
+                image = torch.flip(image, [0])  # RGB to BGR
+                tmp_images.append(image)
+
+            image_batch = torch.stack(tmp_images)
+            images[idx] = image_batch
+
+        depth_range = [0.2, 100] if depth_range is None else depth_range
+        min_depth, max_depth = depth_range
+        step_size = (max_depth - min_depth) / self.num_sampling_steps
+
+        cams = []
+        for idx, (intrinsic, pose) in enumerate(zip(intrinsics, poses)):
+
+            cam = np.zeros((2, 4, 4), dtype=np.float32)
+            cam[0] = pose
+            cam[1, :3, :3] = intrinsic
+            cam[1, 3, 0] = min_depth
+            cam[1, 3, 1] = step_size
+            cam[1, 3, 2] = self.num_sampling_steps
+            cam[1, 3, 3] = max_depth
+
+            cam = cam[np.newaxis, :]  # 1, 2, 4, 4
+            cams.append(cam)
+
+        images, keyview_idx, cams = to_torch((images, keyview_idx, cams), device=device)
+
+        sample = {
+            "images": images,
+            "keyview_idx": keyview_idx,
+            "cams": cams,
+        }
+        return sample
+
+    def forward(self, images, poses, intrinsics, keyview_idx, **_):
+        image_key = select_by_index(images, keyview_idx)
+        images_source = exclude_index(images, keyview_idx)
+
+        cam_key = select_by_index(intrinsics, keyview_idx)
+        cam_source = exclude_index(intrinsics, keyview_idx)
+
+        images_source = torch.stack(images_source, 1)  # N, num_views, 3, H, W
+        cam_source = torch.stack(cam_source, 1)  # N, num_views, 4, 4
+
+        inp = {
+            "ref": image_key,
+            "ref_cam": cam_key,
+            "srcs": images_source,
+            "srcs_cam": cam_source,
+        }
+
+        cas_depth_num = [64, 32, 16]
+        cas_interv_scale = [4.0, 2.0, 1.0]
+        outputs, refined_depth, prob_maps = self.model(
+            inp, cas_depth_num, cas_interv_scale, mode="soft"
+        )
+        pred_depth = refined_depth
+        pred_depth_confidence = prob_maps[2]
+        pred_depth_uncertainty = 1 - pred_depth_confidence
+
+        pred = {"depth": pred_depth, "depth_uncertainty": pred_depth_uncertainty}
+        aux = {}
+
+        return pred, aux
 
     def forward(
         self,
@@ -130,13 +212,9 @@ class VisMvsnet(nn.Module):
             [prob_map_1_up, prob_map_2_up, prob_map_3],
         )
 
-    def input_adapter(
-        self, images, keyview_idx, poses=None, intrinsics=None, depth_range=None
-    ):
-        pass
-
     def output_adapter(self, model_output):
-        pass
+        pred, aux = model_output
+        return to_numpy(pred), to_numpy(aux)
 
 
 @register_model

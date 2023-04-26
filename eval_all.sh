@@ -65,15 +65,15 @@ python eval.py --eval_type robustmvd --model monodepth2_mono_stereo_640x192_wrap
 python eval.py --eval_type robustmvd --model mvsnet_pl_wrapped --inputs poses intrinsics depth_range --output ${OUT_BASE}/mvsnet_pl_wrapped/known_depth_range --exp_name known_depth_range --num_gpus ${NUM_GPUS} --eth3d_size 768 1152 --kitti_size 384 1280 --dtu_size 896 1216 --scannet_size 448 640 --tanks_and_temples_size 704 1280 ${num_samples} ${eval_uncertainty}
 python eval.py --eval_type robustmvd --model mvsnet_pl_wrapped --inputs poses intrinsics --output ${OUT_BASE}/mvsnet_pl_wrapped/unknown_depth_range --exp_name unknown_depth_range --num_gpus ${NUM_GPUS} --eth3d_size 768 1152 --kitti_size 384 1280 --dtu_size 896 1216 --scannet_size 448 640 --tanks_and_temples_size 704 1280 ${num_samples} ${eval_uncertainty}
 
-# vis_mvsnet_wrapped model:
-python eval.py --eval_type robustmvd --model vis_mvsnet_wrapped --inputs poses intrinsics depth_range --output ${OUT_BASE}/vis_mvsnet/known_depth_range --exp_name known_depth_range --num_gpus ${NUM_GPUS} --eth3d_size 768 1152 --kitti_size 384 1280 --dtu_size 896 1216 --scannet_size 448 640 --tanks_and_temples_size 704 1280 ${num_samples} ${eval_uncertainty}
-python eval.py --eval_type robustmvd --model vis_mvsnet_wrapped --inputs poses intrinsics --output ${OUT_BASE}/vis_mvsnet/unknown_depth_range --exp_name unknown_depth_range --num_gpus ${NUM_GPUS} --eth3d_size 768 1152 --kitti_size 384 1280 --dtu_size 896 1216 --scannet_size 448 640 --tanks_and_temples_size 704 1280 ${num_samples} ${eval_uncertainty}
+# vis_mvsnet model:
+python eval.py --eval_type robustmvd --model vis_mvsnet --inputs poses intrinsics depth_range --output ${OUT_BASE}/vis_mvsnet/known_depth_range --exp_name known_depth_range --num_gpus ${NUM_GPUS} --eth3d_size 768 1152 --kitti_size 384 1280 --dtu_size 896 1216 --scannet_size 448 640 --tanks_and_temples_size 704 1280 ${num_samples} ${eval_uncertainty}
+python eval.py --eval_type robustmvd --model vis_mvsnet --inputs poses intrinsics --output ${OUT_BASE}/vis_mvsnet/unknown_depth_range --exp_name unknown_depth_range --num_gpus ${NUM_GPUS} --eth3d_size 768 1152 --kitti_size 384 1280 --dtu_size 896 1216 --scannet_size 448 640 --tanks_and_temples_size 704 1280 ${num_samples} ${eval_uncertainty}
 
 
 # midas_big_v2_1_wrapped model:
 python eval.py --eval_type robustmvd --model midas_big_v2_1_wrapped --output ${OUT_BASE}/midas_big_v2_1_wrapped --num_gpus ${NUM_GPUS} --max_source_views 0 --alignment least_squares_scale_shift ${num_samples}
 
-# vis_mvsnet_wrapped model
+# vis_mvsnet_wrapped model:
 python eval.py --eval_type robustmvd --model vis_mvsnet_wrapped --inputs poses intrinsics depth_range --output ${OUT_BASE}/vis_mvsnet_wrapped/known_depth_range --exp_name known_depth_range --num_gpus ${NUM_GPUS} --eth3d_size 768 1152 --kitti_size 384 1280 --dtu_size 896 1216 --scannet_size 448 640 --tanks_and_temples_size 704 1280 ${num_samples} ${eval_uncertainty}
 python eval.py --eval_type robustmvd --model vis_mvsnet_wrapped --inputs poses intrinsics --output ${OUT_BASE}/vis_mvsnet_wrapped/unknown_depth_range --exp_name unknown_depth_range --num_gpus ${NUM_GPUS} --eth3d_size 768 1152 --kitti_size 384 1280 --dtu_size 896 1216 --scannet_size 448 640 --tanks_and_temples_size 704 1280 ${num_samples} ${eval_uncertainty}
 
