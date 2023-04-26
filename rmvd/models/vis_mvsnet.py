@@ -3,6 +3,7 @@ import math
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torchvision import transforms as T
 import numpy as np
 
 from rmvd.models.blocks.vis_mvsnet_feature_extractor import FeatExt
@@ -21,12 +22,19 @@ from rmvd.data.transforms import Resize
 
 
 class VisMvsnet(nn.Module):
-    def __init__(self):
-        super(VisMvsnet).__init__()
+    def __init__(self, num_sampling_steps=192):
+        super().__init__()
         self.feat_ext = FeatExt()
         self.stage1 = SingleStage()
         self.stage2 = SingleStage()
         self.stage3 = SingleStage()
+        self.input_transform = T.Compose(
+            [
+                T.ToTensor(),
+                T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+            ]
+        )
+        self.num_sampling_steps = num_sampling_steps
 
     def input_adapter(
         self, images, keyview_idx, poses=None, intrinsics=None, depth_range=None
@@ -55,6 +63,19 @@ class VisMvsnet(nn.Module):
             image_batch = torch.stack(tmp_images)
             images[idx] = image_batch
 
+        images, keyview_idx, intrinsics, poses = to_torch(
+            (images, keyview_idx, intrinsics, poses), device=device
+        )
+
+        sample = {
+            "images": images,
+            "poses": poses,
+            "intrinsics": intrinsics,
+            "keyview_idx": keyview_idx,
+        }
+        return sample
+
+    def forward(self, images, poses, intrinsics, keyview_idx, depth_range, **_):
         depth_range = [0.2, 100] if depth_range is None else depth_range
         min_depth, max_depth = depth_range
         step_size = (max_depth - min_depth) / self.num_sampling_steps
@@ -72,56 +93,25 @@ class VisMvsnet(nn.Module):
 
             cam = cam[np.newaxis, :]  # 1, 2, 4, 4
             cams.append(cam)
-
-        images, keyview_idx, cams = to_torch((images, keyview_idx, cams), device=device)
-
-        sample = {
-            "images": images,
-            "keyview_idx": keyview_idx,
-            "cams": cams,
-        }
-        return sample
-
-    def forward(self, images, poses, intrinsics, keyview_idx, **_):
         image_key = select_by_index(images, keyview_idx)
         images_source = exclude_index(images, keyview_idx)
 
-        cam_key = select_by_index(intrinsics, keyview_idx)
-        cam_source = exclude_index(intrinsics, keyview_idx)
+        cam_key = select_by_index(cams, keyview_idx)
+        cam_source = exclude_index(cams, keyview_idx)
 
         images_source = torch.stack(images_source, 1)  # N, num_views, 3, H, W
         cam_source = torch.stack(cam_source, 1)  # N, num_views, 4, 4
-
-        inp = {
+        sample = {
             "ref": image_key,
             "ref_cam": cam_key,
             "srcs": images_source,
             "srcs_cam": cam_source,
         }
-
-        cas_depth_num = [64, 32, 16]
-        cas_interv_scale = [4.0, 2.0, 1.0]
-        outputs, refined_depth, prob_maps = self.model(
-            inp, cas_depth_num, cas_interv_scale, mode="soft"
-        )
-        pred_depth = refined_depth
-        pred_depth_confidence = prob_maps[2]
-        pred_depth_uncertainty = 1 - pred_depth_confidence
-
-        pred = {"depth": pred_depth, "depth_uncertainty": pred_depth_uncertainty}
-        aux = {}
-
-        return pred, aux
-
-    def forward(
-        self,
-        sample,
-        depth_nums,
-        interval_scales,
-        upsample=False,
-        mem=False,
-        mode="soft",
-    ):
+        depth_nums = [64, 32, 16]
+        interval_scales = [4.0, 2.0, 1.0]
+        mode = "soft"
+        mem = False
+        upsample = False
         ref, ref_cam, srcs, srcs_cam = [
             sample[attr] for attr in ["ref", "ref_cam", "srcs", "srcs_cam"]
         ]
@@ -202,7 +192,7 @@ class VisMvsnet(nn.Module):
         # refined_depth = self.refine(est_depth_3, ref_feat_3, ref_cam, srcs_feat_3, srcs_cam, 2)
         refined_depth = est_depth_3
 
-        return (
+        outputs, pred_depth, prob_maps = (
             [
                 [est_depth_1, pair_results_1],
                 [est_depth_2, pair_results_2],
@@ -211,6 +201,13 @@ class VisMvsnet(nn.Module):
             refined_depth,
             [prob_map_1_up, prob_map_2_up, prob_map_3],
         )
+        pred_depth_confidence = prob_maps[2]
+        pred_depth_uncertainty = 1 - pred_depth_confidence
+
+        pred = {"depth": pred_depth, "depth_uncertainty": pred_depth_uncertainty}
+        aux = {}
+
+        return pred, aux
 
     def output_adapter(self, model_output):
         pred, aux = model_output
@@ -221,7 +218,10 @@ class VisMvsnet(nn.Module):
 def vis_mvsnet(pretrained=True, weights=None, train=False, num_gpus=1, **kwargs):
     pretrained_weights = "https://lmb.informatik.uni-freiburg.de/people/schroepp/weights/robustmvd_600k.pt"  # TODO: CHnage this
     weights = pretrained_weights if (pretrained and weights is None) else None
+    cfg = {
+        "num_sampling_steps": 192,
+    }
     model = build_model_with_cfg(
-        model_cls=VisMvsnet, weights=weights, train=train, num_gpus=num_gpus
+        model_cls=VisMvsnet, cfg=cfg, weights=weights, train=train, num_gpus=num_gpus
     )
     return model
