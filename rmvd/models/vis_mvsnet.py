@@ -216,7 +216,7 @@ class VisMvsnet(nn.Module):
 
 @register_model
 def vis_mvsnet(pretrained=True, weights=None, train=False, num_gpus=1, **kwargs):
-    pretrained_weights = "https://lmb.informatik.uni-freiburg.de/people/schroepp/weights/robustmvd_600k.pt"  # TODO: CHnage this
+    pretrained_weights = "https://raw.githubusercontent.com/jzhangbs/Vis-MVSNet/master/pretrained_model/vis/20000.tar"
     weights = pretrained_weights if (pretrained and weights is None) else None
     cfg = {
         "num_sampling_steps": 192,
