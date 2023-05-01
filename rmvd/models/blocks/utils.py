@@ -8,6 +8,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
+from kornia.utils import create_meshgrid
 
 
 def conv(in_planes, out_planes, kernel_size=3, stride=1):
@@ -241,3 +242,61 @@ def scale_camera(cam: Union[np.ndarray, torch.Tensor], scale: Union[Tuple, float
     else:
         raise TypeError
     return new_cam
+
+
+#################### Utils for mvsnet ####################
+def homo_warp(src_feat, src_proj, ref_proj_inv, depth_values):
+    # src_feat: (B, C, H, W)
+    # src_proj: (B, 4, 4)
+    # ref_proj_inv: (B, 4, 4)
+    # depth_values: (B, D)
+    # out: (B, C, D, H, W)
+    """This is a Python function that performs a homography warp on a given source feature map (src_feat) using the provided source and reference camera projection matrices (src_proj and ref_proj_inv), and a set of depth values (depth_values). The function returns a warped source feature map."""
+    B, C, H, W = src_feat.shape
+    D = depth_values.shape[1]
+    device = src_feat.device
+    dtype = src_feat.dtype
+    # Compute the transformation matrix by multiplying the source and inverse reference camera projection matrices.
+    transform = src_proj @ ref_proj_inv
+    # Extract the rotation (R) and translation (T) matrices from the transformation matrix.
+    R = transform[:, :3, :3]  # (B, 3, 3)
+    T = transform[:, :3, 3:]  # (B, 3, 1)
+    # create grid from the ref frame
+    # Create a grid of points in the reference frame using create_meshgrid function.
+    ref_grid = create_meshgrid(H, W, normalized_coordinates=False)  # (1, H, W, 2)
+    ref_grid = ref_grid.to(device).to(dtype)
+    # Reshape and expand the reference grid to match the input batch size.
+    ref_grid = ref_grid.permute(0, 3, 1, 2)  # (1, 2, H, W)
+    ref_grid = ref_grid.reshape(1, 2, H * W)  # (1, 2, H*W)
+    ref_grid = ref_grid.expand(B, -1, -1)  # (B, 2, H*W)
+    ref_grid = torch.cat((ref_grid, torch.ones_like(ref_grid[:, :1])), 1)  # (B, 3, H*W)
+    # Compute the reference grid points in 3D by multiplying with the depth values.
+    ref_grid_d = ref_grid.unsqueeze(2) * depth_values.view(B, 1, D, 1)  # (B, 3, D, H*W)
+    ref_grid_d = ref_grid_d.view(B, 3, D * H * W)
+    # Transform the 3D reference grid points to the source frame using the rotation and translation matrices.
+    src_grid_d = R @ ref_grid_d + T  # (B, 3, D*H*W)
+    del ref_grid_d, ref_grid, transform, R, T  # release (GPU) memory
+    src_grid = src_grid_d[:, :2] / src_grid_d[:, -1:]  # divide by depth (B, 2, D*H*W)
+    del src_grid_d
+    # Normalize the 2D source grid points to the range of -1 to 1.
+    src_grid[:, 0] = src_grid[:, 0] / ((W - 1) / 2) - 1  # scale to -1~1
+    src_grid[:, 1] = src_grid[:, 1] / ((H - 1) / 2) - 1  # scale to -1~1
+    src_grid = src_grid.permute(0, 2, 1)  # (B, D*H*W, 2)
+    src_grid = src_grid.view(B, D, H * W, 2)
+
+    # Perform a bilinear grid sampling on the source feature map using the transformed source grid points.
+    warped_src_feat = F.grid_sample(
+        src_feat, src_grid, mode="bilinear", padding_mode="zeros", align_corners=True
+    )  # (B, C, D, H*W)
+    # Reshape the result to match the input dimensions.
+    warped_src_feat = warped_src_feat.view(B, C, D, H, W)
+
+    return warped_src_feat
+
+
+def depth_regression(p, depth_values):
+    # p: probability volume [B, D, H, W]
+    # depth_values: discrete depth values [B, D]
+    depth_values = depth_values.view(*depth_values.shape, 1, 1)
+    depth = torch.sum(p * depth_values, 1)
+    return depth
