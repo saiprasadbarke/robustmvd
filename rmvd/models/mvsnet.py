@@ -28,7 +28,13 @@ class MVSNet(nn.Module):
     def input_adapter(
         self, images, keyview_idx, poses=None, intrinsics=None, depth_range=None
     ):
-        pass
+        sample = {
+            "images": images,
+            "poses": poses,
+            "intrinsics": intrinsics,
+            "keyview_idx": keyview_idx,
+        }
+        return sample
 
     def forward(self, images, poses, intrinsics, keyview_idx, depth_range, **_):
         pass
