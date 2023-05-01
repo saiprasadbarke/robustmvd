@@ -62,9 +62,9 @@ class VisMvsnet(nn.Module):
 
             image_batch = torch.stack(tmp_images)
             images[idx] = image_batch
-
-        images, keyview_idx, intrinsics, poses = to_torch(
-            (images, keyview_idx, intrinsics, poses), device=device
+        depth_range = [0.2, 100] if depth_range is None else depth_range
+        images, keyview_idx, intrinsics, poses, depth_range = to_torch(
+            (images, keyview_idx, intrinsics, poses, depth_range), device=device
         )
 
         sample = {
@@ -72,11 +72,12 @@ class VisMvsnet(nn.Module):
             "poses": poses,
             "intrinsics": intrinsics,
             "keyview_idx": keyview_idx,
+            "depth_range": depth_range,
         }
         return sample
 
     def forward(self, images, poses, intrinsics, keyview_idx, depth_range, **_):
-        depth_range = [0.2, 100] if depth_range is None else depth_range
+
         min_depth, max_depth = depth_range
         step_size = (max_depth - min_depth) / self.num_sampling_steps
 
