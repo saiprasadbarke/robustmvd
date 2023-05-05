@@ -90,13 +90,6 @@ def groupwise_correlation(v1, v2, groups, dim):
     return vc
 
 
-def bin_op_reduce(lst: List, func):
-    result = lst[0]
-    for i in range(1, len(lst)):
-        result = func(result, lst[i])
-    return result
-
-
 class NanError(Exception):
     pass
 

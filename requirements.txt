@@ -14,3 +14,4 @@ dill
 easydict
 wandb
 tensorboard
+kornia # create_mesh in mvsnet

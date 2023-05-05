@@ -4,8 +4,8 @@ Based on the model registry from the timm package ( https://github.com/huggingfa
 """
 
 
-_model_entrypoints = {}
-_trainable_model_entrypoints = {}
+_model_entrypoints = {}  # store registered models
+_trainable_model_entrypoints = {}  # store registered trainable models
 
 
 def register_model(arg=None, trainable=True):
@@ -13,6 +13,7 @@ def register_model(arg=None, trainable=True):
         """Register a model."""
         model_name = model_entrypoint.__name__
         _model_entrypoints[model_name] = model_entrypoint
+        # If the model is trainable, add it to the trainable models as well
         if trainable:
             _trainable_model_entrypoints[model_name] = model_entrypoint
         return model_entrypoint

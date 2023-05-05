@@ -84,8 +84,7 @@ class VisMvsnetWrapped(ModelWrappers):
         step_size = (max_depth - min_depth) / self.num_sampling_steps
 
         cams = []
-        for idx, (intrinsic, pose) in enumerate(zip(intrinsics, poses)):
-
+        for intrinsic, pose in zip(intrinsics, poses):
             cam = np.zeros((2, 4, 4), dtype=np.float32)
             cam[0] = pose
             cam[1, :3, :3] = intrinsic
@@ -145,7 +144,7 @@ class VisMvsnetWrapped(ModelWrappers):
 @register_model(trainable=False)
 def vis_mvsnet_wrapped(
     pretrained=True, weights=None, train=False, num_gpus=1, **kwargs
-):
+):  # TODO:  AssertionError: Model supports only pretrained=True, weights=None.
     assert pretrained and (
         weights is None
     ), "Model supports only pretrained=True, weights=None."

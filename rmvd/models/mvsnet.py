@@ -37,45 +37,6 @@ class MVSNet(nn.Module):
         self.num_sampling_steps = num_sampling_steps
         self.sample_in_inv_depth_space = sample_in_inv_depth_space
 
-    def input_adapter(
-        self, images, keyview_idx, poses=None, intrinsics=None, depth_range=None
-    ):
-        device = get_torch_model_device(self)
-
-        orig_ht, orig_wd = images[0].shape[-2:]
-        ht, wd = int(math.ceil(orig_ht / 64.0) * 64.0), int(
-            math.ceil(orig_wd / 64.0) * 64.0
-        )
-        if (orig_ht != ht) or (orig_wd != wd):
-            resized = Resize(size=(ht, wd))(
-                {"images": images, "intrinsics": intrinsics}
-            )
-            images = resized["images"]
-            intrinsics = resized["intrinsics"]
-
-        for idx, image_batch in enumerate(images):
-            tmp_images = []
-            image_batch = image_batch.transpose(0, 2, 3, 1)
-            for image in image_batch:
-                image = self.input_transform(image.astype(np.uint8)).float()
-                tmp_images.append(image)
-
-            image_batch = torch.stack(tmp_images)
-            images[idx] = image_batch
-
-        images, keyview_idx, intrinsics, poses, depth_samples = to_torch(
-            (images, keyview_idx, intrinsics, poses, depth_samples), device=device
-        )
-
-        sample = {
-            "images": images,
-            "poses": poses,
-            "intrinsics": intrinsics,
-            "keyview_idx": keyview_idx,
-            "depth_range": depth_range,
-        }
-        return sample
-
     def forward(self, images, poses, intrinsics, keyview_idx, depth_range, **_):
         N = images[0].shape[0]
         if depth_range is None:
@@ -118,7 +79,6 @@ class MVSNet(nn.Module):
             for intrinsic, pose, cur_keyview_idx in zip(
                 intrinsic_batch, pose_batch, keyview_idx
             ):
-
                 scale_arr = np.array([[0.25] * 3, [0.25] * 3, [1.0] * 3])  # 3, 3
                 intrinsic = (
                     intrinsic * scale_arr
@@ -216,6 +176,45 @@ class MVSNet(nn.Module):
         aux = {}
 
         return pred, aux
+
+    def input_adapter(
+        self, images, keyview_idx, poses=None, intrinsics=None, depth_range=None
+    ):
+        device = get_torch_model_device(self)
+
+        orig_ht, orig_wd = images[0].shape[-2:]
+        ht, wd = int(math.ceil(orig_ht / 64.0) * 64.0), int(
+            math.ceil(orig_wd / 64.0) * 64.0
+        )
+        if (orig_ht != ht) or (orig_wd != wd):
+            resized = Resize(size=(ht, wd))(
+                {"images": images, "intrinsics": intrinsics}
+            )
+            images = resized["images"]
+            intrinsics = resized["intrinsics"]
+
+        for idx, image_batch in enumerate(images):
+            tmp_images = []
+            image_batch = image_batch.transpose(0, 2, 3, 1)
+            for image in image_batch:
+                image = self.input_transform(image.astype(np.uint8)).float()
+                tmp_images.append(image)
+
+            image_batch = torch.stack(tmp_images)
+            images[idx] = image_batch
+
+        images, keyview_idx, intrinsics, poses, depth_samples = to_torch(
+            (images, keyview_idx, intrinsics, poses, depth_samples), device=device
+        )
+
+        sample = {
+            "images": images,
+            "poses": poses,
+            "intrinsics": intrinsics,
+            "keyview_idx": keyview_idx,
+            "depth_range": depth_range,
+        }
+        return sample
 
     def output_adapter(self, model_output):
         pred, aux = model_output

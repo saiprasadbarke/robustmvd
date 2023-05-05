@@ -1,10 +1,10 @@
 # Standard library imports
-from abc import abstractmethod
+from abc import ABCMeta, abstractmethod
 
 # Third party imports
 import torch.nn as nn
 
-class ModelWrappers(nn.Module):
+class ModelWrappers(nn.Module, metaclass=ABCMeta):
     @abstractmethod
     def input_adapter(
         self, images, keyview_idx, poses=None, intrinsics=None, depth_range=None

@@ -8,6 +8,7 @@ import numpy as np
 
 from rmvd.models.blocks.vis_mvsnet_feature_extractor import FeatExt
 from rmvd.models.blocks.vis_mvsnet_singlestage import SingleStage
+from rmvd.models.wrappers.wrappers import ModelWrappers
 
 from .registry import register_model
 from .helpers import build_model_with_cfg
@@ -21,7 +22,7 @@ from rmvd.utils import (
 from rmvd.data.transforms import Resize
 
 
-class VisMvsnet(nn.Module):
+class VisMvsnet(ModelWrappers):
     def __init__(self, num_sampling_steps=192):
         super().__init__()
         self.feat_ext = FeatExt()
@@ -36,70 +37,41 @@ class VisMvsnet(nn.Module):
         )
         self.num_sampling_steps = num_sampling_steps
 
-    def input_adapter(
-        self, images, keyview_idx, poses=None, intrinsics=None, depth_range=None
-    ):
-        device = get_torch_model_device(self)
-
-        orig_ht, orig_wd = images[0].shape[-2:]
-        ht, wd = int(math.ceil(orig_ht / 64.0) * 64.0), int(
-            math.ceil(orig_wd / 64.0) * 64.0
-        )
-        if (orig_ht != ht) or (orig_wd != wd):
-            resized = Resize(size=(ht, wd))(
-                {"images": images, "intrinsics": intrinsics}
-            )
-            images = resized["images"]
-            intrinsics = resized["intrinsics"]
-
-        for idx, image_batch in enumerate(images):
-            tmp_images = []
-            image_batch = image_batch.transpose(0, 2, 3, 1)
-            for image in image_batch:
-                image = self.input_transform(image.astype(np.uint8)).float()
-                image = torch.flip(image, [0])  # RGB to BGR
-                tmp_images.append(image)
-
-            image_batch = torch.stack(tmp_images)
-            images[idx] = image_batch
-        depth_range = [0.2, 100] if depth_range is None else depth_range
-        images, keyview_idx, intrinsics, poses, depth_range = to_torch(
-            (images, keyview_idx, intrinsics, poses, depth_range), device=device
-        )
-
-        sample = {
-            "images": images,
-            "poses": poses,
-            "intrinsics": intrinsics,
-            "keyview_idx": keyview_idx,
-            "depth_range": depth_range,
-        }
-        return sample
-
-    def forward(self, images, poses, intrinsics, keyview_idx, depth_range, **_):
+    def forward(
+        self, images, poses, intrinsics, keyview_idx, depth_range, **_
+    ):  # this is fixed
+        # Extract the minimum and maximum depth from the depth_range input.
 
         min_depth, max_depth = depth_range
+        # Calculate the step size for depth sampling based on the min_depth, max_depth, and the number of sampling steps.
         step_size = (max_depth - min_depth) / self.num_sampling_steps
-
+        # Initialize an empty list named cams for storing camera matrices.
         cams = []
-        for idx, (intrinsic, pose) in enumerate(zip(intrinsics, poses)):
+        # for each intrinsic and pose in the input, create a camera matrix
+        for intrinsic, pose in zip(intrinsics, poses):
+            cam = torch.zeros((4, 2, 4, 4), dtype=torch.float32, device=pose.device)
+            cam[:, 0, :, :] = pose
+            cam[:, 1, :3, :3] = intrinsic
+            cam[:, 1, 3, 0] = min_depth
+            cam[:, 1, 3, 1] = step_size
+            cam[:, 1, 3, 2] = self.num_sampling_steps
+            cam[:, 1, 3, 3] = max_depth
 
-            cam = np.zeros((2, 4, 4), dtype=np.float32)
-            cam[0] = pose
-            cam[1, :3, :3] = intrinsic
-            cam[1, 3, 0] = min_depth
-            cam[1, 3, 1] = step_size
-            cam[1, 3, 2] = self.num_sampling_steps
-            cam[1, 3, 3] = max_depth
-
-            cam = cam[np.newaxis, :]  # 1, 2, 4, 4
+            # cam = cam[np.newaxis, :]  # 1, 2, 4, 4
+            # Append it to the cams list.
             cams.append(cam)
+        # Convert images, keyview_idx, and cams to PyTorch tensors and move them to the appropriate device.
+        images, keyview_idx, cams = to_torch(
+            (images, keyview_idx, cams),
+            device=get_torch_model_device(self),
+        )
+        # Extract the reference image and source images based on the keyview_idx.
         image_key = select_by_index(images, keyview_idx)
         images_source = exclude_index(images, keyview_idx)
-
+        # Extract the reference camera matrix and source camera matrices based on the keyview_idx.
         cam_key = select_by_index(cams, keyview_idx)
         cam_source = exclude_index(cams, keyview_idx)
-
+        # Stack the source images and source camera matrices along a new dimension.
         images_source = torch.stack(images_source, 1)  # N, num_views, 3, H, W
         cam_source = torch.stack(cam_source, 1)  # N, num_views, 4, 4
         sample = {
@@ -108,14 +80,17 @@ class VisMvsnet(nn.Module):
             "srcs": images_source,
             "srcs_cam": cam_source,
         }
+        # Set up the initial parameters for the multi-scale depth estimation, including the number of depth levels at each scale and the scale factors for depth intervals.
         depth_nums = [64, 32, 16]
         interval_scales = [4.0, 2.0, 1.0]
         mode = "soft"
         mem = False
         upsample = False
+        # Extract the reference image, reference camera matrix, source images, and source camera matrices from the sample dictionary.
         ref, ref_cam, srcs, srcs_cam = [
             sample[attr] for attr in ["ref", "ref_cam", "srcs", "srcs_cam"]
         ]
+        # Compute the starting depth and depth interval from the reference camera matrix.
         depth_start = ref_cam[:, 1:2, 3:4, 0:1]  # n111
         depth_interval = ref_cam[:, 1:2, 3:4, 1:2]  # n111
         srcs_cam = [srcs_cam[:, i, ...] for i in range(srcs_cam.size()[1])]
@@ -206,9 +181,48 @@ class VisMvsnet(nn.Module):
         pred_depth_uncertainty = 1 - pred_depth_confidence
 
         pred = {"depth": pred_depth, "depth_uncertainty": pred_depth_uncertainty}
-        aux = {}
+        aux = {"outputs": outputs, "prob_maps": prob_maps}
 
         return pred, aux
+
+    def input_adapter(
+        self, images, keyview_idx, poses=None, intrinsics=None, depth_range=None
+    ):
+        device = get_torch_model_device(self)
+
+        orig_ht, orig_wd = images[0].shape[-2:]
+        ht, wd = int(math.ceil(orig_ht / 64.0) * 64.0), int(
+            math.ceil(orig_wd / 64.0) * 64.0
+        )
+        if (orig_ht != ht) or (orig_wd != wd):
+            resized = Resize(size=(ht, wd))(
+                {"images": images, "intrinsics": intrinsics}
+            )
+            images = resized["images"]
+            intrinsics = resized["intrinsics"]
+
+        for idx, image_batch in enumerate(images):
+            tmp_images = []
+            image_batch = image_batch.transpose(0, 2, 3, 1)
+            for image in image_batch:
+                image = self.input_transform(image.astype(np.uint8)).float()
+                image = torch.flip(image, [0])  # RGB to BGR
+                tmp_images.append(image)
+
+            image_batch = torch.stack(tmp_images)
+            images[idx] = image_batch
+        depth_range = [0.2, 100] if depth_range is None else depth_range
+        images, keyview_idx, poses, intrinsics, depth_range = to_torch(
+            (images, keyview_idx, poses, intrinsics, depth_range), device=device
+        )
+        sample = {
+            "images": images,
+            "poses": poses,
+            "intrinsics": intrinsics,
+            "keyview_idx": keyview_idx,
+            "depth_range": depth_range,
+        }
+        return sample
 
     def output_adapter(self, model_output):
         pred, aux = model_output

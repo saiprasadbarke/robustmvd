@@ -5,7 +5,7 @@
     root = '/tmp/mvsnet_pl'
 
 [vis_mvsnet]
-    root = '/tmp/vis_mvsnet'
+    root = '/misc/student/barkes/Vis-MVSNet'
     
 [midas]
     root = '/tmp/midas'

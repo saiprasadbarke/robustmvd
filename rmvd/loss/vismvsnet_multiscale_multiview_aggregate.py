@@ -1,7 +1,8 @@
 # Standard Imports
 
 # Local Imports
-from models.blocks.utils import bin_op_reduce
+from .registry import register_loss
+from .utils import bin_op_reduce
 
 # External Libraries
 import torch
@@ -9,9 +10,13 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
+@register_loss
 class VismvnsetMultiscaleMultiviewAggregate(nn.Module):  # TODO
-    def __init__(self):
-        super(self).__init__()
+    def __init__(
+        self,
+        model,
+    ):
+        super().__init__()
 
     @property
     def name(self):
