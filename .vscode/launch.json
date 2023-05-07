@@ -105,7 +105,7 @@
                 "--lr",
                 "1e-4",
                 "--loss",
-                "VismvnsetMultiscaleMultiviewAggregate", //chnage this
+                "SL1Loss", //chnage this
                 "--dataset",
                 "dtu",
                 "--input_size",
