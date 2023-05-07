@@ -1,3 +1,5 @@
+# This file contains the paths to the various original model implementations which are wrapped in this project.
+
 [monodepth2]
     root = '/tmp/monodepth2/'
 
