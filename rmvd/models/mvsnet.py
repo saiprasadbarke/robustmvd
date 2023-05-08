@@ -25,7 +25,7 @@ import numpy as np
 
 class MVSNet(nn.Module):
     def __init__(self, sample_in_inv_depth_space=False, num_sampling_steps=192):
-        super(MVSNet, self).__init__()
+        super().__init__()
         self.feature = FeatureNet()
         self.cost_regularization = CostRegNet()
         self.input_transform = T.Compose(
