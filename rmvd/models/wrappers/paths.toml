@@ -4,7 +4,7 @@
     root = '/tmp/monodepth2/'
 
 [mvsnet_pl]
-    root = '/tmp/mvsnet_pl'
+    root = '/misc/student/barkes/mvsnet_pl'
 
 [vis_mvsnet]
     root = '/misc/student/barkes/Vis-MVSNet'

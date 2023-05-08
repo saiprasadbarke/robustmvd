@@ -43,34 +43,35 @@ class MVSNet(nn.Module):
             if self.sample_in_inv_depth_space:
                 depth_samples = (
                     1
-                    / np.linspace(
-                        1 / 100, 1 / 0.2, self.num_sampling_steps, dtype=np.float32
+                    / torch.linspace(
+                        1 / 100, 1 / 0.2, self.num_sampling_steps, dtype=torch.float32
                     )[::-1]
                 )
             else:
-                depth_samples = np.linspace(
-                    0.2, 100, self.num_sampling_steps, dtype=np.float32
+                depth_samples = torch.linspace(
+                    0.2, 100, self.num_sampling_steps, dtype=torch.float32
                 )
 
-            depth_samples = np.stack(N * [depth_samples])
+            depth_samples = torch.stack(N * [depth_samples])
         else:
             min_depth, max_depth = depth_range
             if self.sample_in_inv_depth_space:
                 depth_samples = (
                     1
-                    / np.linspace(
-                        1 / max_depth,
-                        1 / min_depth,
+                    / torch.linspace(
+                        1 / max_depth[0],
+                        1 / min_depth[0],
                         self.num_sampling_steps,
-                        dtype=np.float32,
+                        dtype=torch.float32,
                     )[::-1]
                 )
             else:
-                depth_samples = np.linspace(
-                    min_depth, max_depth, self.num_sampling_steps, dtype=np.float32
+                depth_samples = torch.linspace(
+                    min_depth[0], max_depth[0], self.num_sampling_steps, dtype=torch.float32
                 )
+            depth_samples = torch.stack(N * [depth_samples])
             depth_samples = (
-                depth_samples.transpose()
+                depth_samples.transpose(0,1)
             )  # (num_sampling_steps, N) to (N, num_sampling_steps)
 
         proj_mats = []
@@ -79,21 +80,21 @@ class MVSNet(nn.Module):
             for intrinsic, pose, cur_keyview_idx in zip(
                 intrinsic_batch, pose_batch, keyview_idx
             ):
-                scale_arr = np.array([[0.25] * 3, [0.25] * 3, [1.0] * 3])  # 3, 3
+                scale_arr = torch.tensor([[0.25] * 3, [0.25] * 3, [1.0] * 3], device=intrinsic.device)  # 3, 3
                 intrinsic = (
                     intrinsic * scale_arr
                 )  # scale intrinsics to 4x downsampling that happens within the model
 
                 proj_mat = pose
-                proj_mat[:3, :4] = intrinsic @ proj_mat[:3, :4]
-                proj_mat = proj_mat.astype(np.float32)
+                proj_mat[:3, :4] = torch.matmul(intrinsic, proj_mat[:3, :4])
+                #proj_mat = proj_mat.astype(torch.float32)
 
                 if idx == cur_keyview_idx:
-                    proj_mat = np.linalg.inv(proj_mat)
+                    proj_mat = torch.inverse(proj_mat)
 
                 proj_mat_batch.append(proj_mat)
 
-            proj_mat_batch = np.stack(proj_mat_batch)
+            proj_mat_batch = torch.stack(proj_mat_batch)
             proj_mats.append(proj_mat_batch)
 
         image_key = select_by_index(images, keyview_idx)
@@ -223,9 +224,9 @@ class MVSNet(nn.Module):
 
 @register_model(trainable=False)
 def mvsnet(pretrained=True, weights=None, train=False, num_gpus=1, **kwargs):
-    assert pretrained and (
-        weights is None
-    ), "Model supports only pretrained=True, weights=None."
+    # assert pretrained and (
+    #     weights is None
+    # ), "Model supports only pretrained=True, weights=None."
     cfg = {"sample_in_inv_depth_space": False, "num_sampling_steps": 192}
     model = build_model_with_cfg(
         model_cls=MVSNet,
