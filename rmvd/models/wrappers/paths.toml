@@ -11,3 +11,6 @@
     
 [midas]
     root = '/tmp/midas'
+
+[cvp_mvsnet]
+    root = '/misc/student/barkes/CVP-MVSNet'    
