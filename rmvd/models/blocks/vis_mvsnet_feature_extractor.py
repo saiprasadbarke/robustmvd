@@ -15,7 +15,7 @@ class FeatExt(nn.Module):
     """
 
     def __init__(self):
-        super(FeatExt, self).__init__()
+        super().__init__()
         self.init_conv = nn.Sequential(
             nn.Conv2d(3, 16, 5, 2, 2, bias=False), nn.BatchNorm2d(16), nn.ReLU()
         )

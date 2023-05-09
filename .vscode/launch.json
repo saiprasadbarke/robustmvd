@@ -19,7 +19,7 @@
                 "--num_gpus",
                 "1",
                 "--batch_size",
-                "4",
+                "1",
                 "--max_iterations",
                 "600000",
                 "--model",
@@ -59,7 +59,7 @@
                 "--num_gpus",
                 "1",
                 "--batch_size",
-                "4",
+                "1",
                 "--max_iterations",
                 "600000",
                 "--model",
@@ -83,6 +83,9 @@
                 "flownet_scheduler", //change this
                 "--no_tensorboard"
             ],
+            "env": {
+                "CUDA_VISIBLE_DEVICES": "1"
+            }
         },
         {
             "name": "Python: Remote Train cvp_mvsnet with Args",
@@ -99,7 +102,7 @@
                 "--num_gpus",
                 "1",
                 "--batch_size",
-                "4",
+                "1",
                 "--max_iterations",
                 "600000",
                 "--model",

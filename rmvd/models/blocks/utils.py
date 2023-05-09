@@ -29,7 +29,7 @@ def conv(in_planes, out_planes, kernel_size=3, stride=1):
 
 class ReLUAndSigmoid(nn.Module):
     def __init__(self, inplace: bool = False, min: float = 0, max: float = 1):
-        super(ReLUAndSigmoid, self).__init__()
+        super().__init__()
         self.inplace = inplace
         self.min = min
         self.max = max
