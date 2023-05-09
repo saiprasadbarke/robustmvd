@@ -20,7 +20,7 @@ import torch.nn.functional as F
 
 class Reg(nn.Module):  # Used in class singlestage
     def __init__(self):
-        super(Reg, self).__init__()
+        super().__init__()
         self.init_conv = lambda x: x
         self.unet = UNet(8, 1, 0, 4, [], [8, 16], [], "reg1", dim=3)
 
@@ -32,7 +32,7 @@ class Reg(nn.Module):  # Used in class singlestage
 
 class RegPair(nn.Module):  # Used in class singlestage
     def __init__(self):
-        super(RegPair, self).__init__()
+        super().__init__()
         self.final_conv = nn.Conv3d(8, 1, 3, 1, 1, bias=False)
 
     def forward(self, x):
@@ -42,7 +42,7 @@ class RegPair(nn.Module):  # Used in class singlestage
 
 class RegFuse(nn.Module):  # Used in class singlestage
     def __init__(self):
-        super(RegFuse, self).__init__()
+        super().__init__()
         self.init_conv = lambda x: x
         self.unet = UNet(8, 1, 0, 4, [], [8, 16], [], "reg2", dim=3)
         self.final_conv = nn.Conv3d(8, 1, 3, 1, 1, bias=False)
@@ -56,7 +56,7 @@ class RegFuse(nn.Module):  # Used in class singlestage
 
 class UncertNet(nn.Module):  # Used in class singlestage
     def __init__(self, num_heads=1):
-        super(UncertNet, self).__init__()
+        super().__init__()
         self.conv1 = nn.Sequential(
             nn.Conv2d(1, 8, 3, 1, 1, bias=False), nn.BatchNorm2d(8), nn.ReLU()
         )
@@ -77,7 +77,7 @@ class UncertNet(nn.Module):  # Used in class singlestage
 
 class SingleStage(nn.Module):  # Used in the class Model
     def __init__(self):
-        super(SingleStage, self).__init__()
+        super().__init__()
         self.reg = Reg()
         self.reg_fuse = RegFuse()
         self.reg_pair = RegPair()  # MVS

@@ -5,7 +5,7 @@ import torch.nn as nn
 
 class ListModule(nn.Module):
     def __init__(self, modules: Union[List, OrderedDict]):
-        super(ListModule, self).__init__()
+        super().__init__()
         if isinstance(modules, OrderedDict):
             iterable = modules.items()
         elif isinstance(modules, list):

@@ -14,7 +14,7 @@ def conv(in_planes, out_planes, kernel_size=3, stride=1, padding=1, dilation=1):
 
 class ConvBnReLU3D(nn.Module): #TODO: Remove this from here as there is already an implementation in mvsnet_components.py. Consider moving this to a common modules file. Also, consider adding an optional argument to the init method to configure the use of relu or leaky relu.
     def __init__(self, in_channels, out_channels, kernel_size=3, stride=1, pad=1):
-        super(ConvBnReLU3D, self).__init__()
+        super().__init__()
         self.conv = nn.Conv3d(in_channels, out_channels, kernel_size, stride=stride, padding=pad, bias=False)
         self.bn = nn.BatchNorm3d(out_channels)
     
@@ -23,7 +23,7 @@ class ConvBnReLU3D(nn.Module): #TODO: Remove this from here as there is already 
     
 class FeaturePyramid(nn.Module):
     def __init__(self):
-        super(FeaturePyramid, self).__init__()
+        super().__init__()
         self.conv0aa = conv(3, 64, kernel_size=3, stride=1)
         self.conv0ba = conv(64,64, kernel_size=3, stride=1)
         self.conv0bb = conv(64,64, kernel_size=3, stride=1)
@@ -49,7 +49,7 @@ class FeaturePyramid(nn.Module):
 
 class CostRegNet(nn.Module):
     def __init__(self):
-        super(CostRegNet, self).__init__()
+        super().__init__()
 
         self.conv0 = ConvBnReLU3D(16, 16, kernel_size=3, pad=1)
         self.conv0a = ConvBnReLU3D(16, 16, kernel_size=3, pad=1)

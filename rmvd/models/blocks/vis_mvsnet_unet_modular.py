@@ -15,7 +15,7 @@ class BasicBlock(nn.Module):
     expansion = 1
 
     def __init__(self, inplanes, planes, stride=1, downsample=None, dim=2):
-        super(BasicBlock, self).__init__()
+        super().__init__()
         # The conv_fn and bn_fn variables are used to store the appropriate convolution and batch normalization functions based on the specified dimensionality (dim).
         self.conv_fn = nn.Conv2d if dim == 2 else nn.Conv3d
         self.bn_fn = nn.BatchNorm2d if dim == 2 else nn.BatchNorm3d
@@ -138,7 +138,7 @@ class UNet(nn.Module):
         prefix: str,
         dim: int = 2,
     ):
-        super(UNet, self).__init__()
+        super().__init__()
         # Initialize the appropriate convolution, batch normalization, and deconvolution functions depending on the input dimension 'dim'.
         conv_fn = nn.Conv2d if dim == 2 else nn.Conv3d
         bn_fn = nn.BatchNorm2d if dim == 2 else nn.BatchNorm3d

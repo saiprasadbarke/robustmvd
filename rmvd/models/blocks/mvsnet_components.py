@@ -7,7 +7,7 @@ import torch.nn.functional as F
 
 class ConvBnReLU(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size=3, stride=1, pad=1):
-        super(ConvBnReLU, self).__init__()
+        super().__init__()
         self.conv = nn.Conv2d(
             in_channels,
             out_channels,
@@ -24,7 +24,7 @@ class ConvBnReLU(nn.Module):
 
 class ConvBnReLU3D(nn.Module): #TODO: mvsnet_pl does not use the relu in the forward method but the cvp_mvsnet implementation does. Add an optional argument to the init method to configure the use of relu or leaky relu.
     def __init__(self, in_channels, out_channels, kernel_size=3, stride=1, pad=1):
-        super(ConvBnReLU3D, self).__init__()
+        super().__init__()
         self.conv = nn.Conv3d(
             in_channels,
             out_channels,
@@ -41,7 +41,7 @@ class ConvBnReLU3D(nn.Module): #TODO: mvsnet_pl does not use the relu in the for
 
 class FeatureNet(nn.Module):  #TODO: Modify this code to accept arguments for setting the inchannels, outchannels, kernel size, stride, and padding. This can then be used in cvp_mvsnet implementation. Need an additional optional argument for configuring the use of relu or leaky relu on the convolutions.
     def __init__(self):
-        super(FeatureNet, self).__init__()
+        super().__init__()
         self.inplanes = 32
 
         self.conv0 = ConvBnReLU(3, 8, 3, 1, 1)
@@ -64,7 +64,7 @@ class FeatureNet(nn.Module):  #TODO: Modify this code to accept arguments for se
 
 class CostRegNet(nn.Module): #TODO: Modify this code to accept arguments for setting the inchannels, outchannels, kernel size, stride, and padding. This can then be used in cvp_mvsnet implementation. Need an additional optional argument for configuring the use of relu or leaky relu on the convolutions.
     def __init__(self):
-        super(CostRegNet, self).__init__()
+        super().__init__()
         self.conv0 = ConvBnReLU3D(32, 8)
 
         self.conv1 = ConvBnReLU3D(8, 16, stride=2)

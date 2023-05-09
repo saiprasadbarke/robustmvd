@@ -24,10 +24,10 @@ class RAdam(Optimizer):
                 if 'betas' in param and (param['betas'][0] != betas[0] or param['betas'][1] != betas[1]):
                     param['buffer'] = [[None, None, None] for _ in range(10)]
         defaults = dict(lr=lr, betas=betas, eps=eps, weight_decay=weight_decay, buffer=[[None, None, None] for _ in range(10)])
-        super(RAdam, self).__init__(params, defaults)
+        super().__init__(params, defaults)
 
     def __setstate__(self, state):
-        super(RAdam, self).__setstate__(state)
+        super().__setstate__(state)
 
     def step(self, closure=None):
 
@@ -112,10 +112,10 @@ class PlainRAdam(Optimizer):
         self.degenerated_to_sgd = degenerated_to_sgd
         defaults = dict(lr=lr, betas=betas, eps=eps, weight_decay=weight_decay)
 
-        super(PlainRAdam, self).__init__(params, defaults)
+        super().__init__(params, defaults)
 
     def __setstate__(self, state):
-        super(PlainRAdam, self).__setstate__(state)
+        super().__setstate__(state)
 
     def step(self, closure=None):
 
@@ -187,10 +187,10 @@ class AdamW(Optimizer):
         
         defaults = dict(lr=lr, betas=betas, eps=eps,
                         weight_decay=weight_decay, warmup = warmup)
-        super(AdamW, self).__init__(params, defaults)
+        super().__init__(params, defaults)
 
     def __setstate__(self, state):
-        super(AdamW, self).__setstate__(state)
+        super().__setstate__(state)
 
     def step(self, closure=None):
         loss = None
@@ -319,7 +319,7 @@ class Ranger(Optimizer):
 
     def __setstate__(self, state):
         print("set state called")
-        super(Ranger, self).__setstate__(state)
+        super().__setstate__(state)
 
 
     def step(self, closure=None):
