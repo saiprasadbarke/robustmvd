@@ -104,3 +104,15 @@ class DTURobustMVD(Dataset):
         layouts = default_layouts + layouts if layouts is not None else default_layouts
 
         super().__init__(root=root, layouts=layouts, **kwargs)
+
+
+@register_dataset
+class DTUMvsnet(Dataset):
+
+    base_dataset = 'dtu'
+    split = 'mvsnet'
+    dataset_type = 'mvd'
+
+    def __init__(self, root, aug_fcts=None, input_size=None, to_torch=False, updates=None, update_strict=False, layouts=None, verbose=True, **kwargs):
+        super().__init__(root, aug_fcts, input_size, to_torch, updates, update_strict, layouts, verbose, **kwargs)
+
