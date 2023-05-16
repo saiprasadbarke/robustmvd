@@ -1,11 +1,42 @@
 import importlib
 import collections
 import re
+import random
 
 import numpy as np
 import torch
 from torch._six import string_classes
 import pytoml
+
+
+def set_random_seed(seed=None, use_gpu=True):
+    if seed is None:
+        seed = random.randint(1, 10000)
+    random.seed(seed)
+    torch.manual_seed(seed)
+    np.random.seed(seed)
+    if use_gpu and torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
+
+
+def compute_depth_range(depth=None, invdepth=None, default_min_depth=0.1, default_max_depth=100.):
+    if depth is not None:
+        mask = depth > 0
+        if mask.any():
+            min_depth = np.min(depth[mask])
+            max_depth = np.max(depth[mask])
+            depth_range = (min_depth, max_depth)
+            return depth_range
+        
+    if invdepth is not None:
+        mask = invdepth > 0
+        if mask.any():
+            min_invdepth = np.min(invdepth[mask])
+            max_invdepth = np.max(invdepth[mask])
+            depth_range = (1./max_invdepth, 1./min_invdepth)
+            return depth_range
+        
+    return (default_min_depth, default_max_depth)
 
 
 def get_function(name):  # from https://github.com/aschampion/diluvian/blob/master/diluvian/util.py

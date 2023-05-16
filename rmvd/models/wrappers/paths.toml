@@ -14,3 +14,7 @@
 
 [cvp_mvsnet]
     root = '/misc/student/barkes/CVP-MVSNet'    
+    
+[patchmatchnet]
+    root = '/misc/student/barkes/patchmatchnet'
+
