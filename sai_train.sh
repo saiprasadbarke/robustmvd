@@ -1,13 +1,13 @@
-qsub -l nodes=X:ppn=Y:gpus=Z:FEATURE1:FEATURE2,mem=A,walltime=T,other=R -q QUEUE SCRIPTNAME
-
-
 #!/bin/bash
-#PBS -N ClusterHelloWorld
+#PBS -N sai_test_mvsnet
 #PBS -S /bin/bash
-#PBS -l nodes=1:ppn=1,mem=100mb,nice=10,walltime=00:01:00
+#PBS -l nodes=1:ppn=1:gpus=1:nvidiaP100:exclusive_process,mem=50gb,nice=1,walltime=23:59:59
 #PBS -m a
 #PBS -M <user>@informatik.uni-freiburg.de
 #PBS -j oe
 sleep 10
 echo "Hello World"
 exit 0
+
+
+qsub -l nodes=1:ppn=1:gpus=1:nvidiaP100:exclusive_process,mem=50gb,nice=1,walltime=23:59:59 -q student -I
