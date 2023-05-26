@@ -60,7 +60,7 @@
                 "--output",
                 "/misc/lmbraid19/barkes/robustmvd/training/mvsnet/debug_run",
                 "--num_gpus",
-                "1",
+                "2",
                 "--batch_size",
                 "2",
                 "--max_iterations",
@@ -88,12 +88,12 @@
                 "600",
                 "800",
                 "--scheduler",
-                "flownet_scheduler", //change this
-                "--no_tensorboard"
+                "flownet_scheduler"
+                //"--no_tensorboard"
             ],
-            "env": {
-                "CUDA_VISIBLE_DEVICES": "1"
-            }
+            // "env": {
+            //     "CUDA_VISIBLE_DEVICES": "1"
+            // }
         },
         {
             "name": "Python: Remote Train cvp_mvsnet with Args",
