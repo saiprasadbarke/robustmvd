@@ -61,6 +61,12 @@ class ResizeInputs:
             images = [resize(image, list(image.shape[:-2]) + [ht, wd], order=self.__interpolation_order) for image in images]
             sample["images"] = images
         
+        #resize masks
+        if "masks" in sample:
+            masks = sample["masks"]
+            masks = [resize(mask, list(mask.shape[:-2]) + [ht, wd], order=self.__interpolation_order) for mask in masks]
+            sample["masks"] = masks
+        
         # resize intrinsics:
         if "intrinsics" in sample:
             scale_arr = np.array([[wd / orig_wd]*3, [ht / orig_ht]*3, [1.]*3], dtype=np.float32)  # 3, 3

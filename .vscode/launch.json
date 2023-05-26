@@ -43,6 +43,9 @@
                 "flownet_scheduler",
                 "--no_tensorboard"
             ],
+            "env": {
+                "CUDA_VISIBLE_DEVICES": "1"
+            }
         },
         {
             "name": "Python: Remote Train mvsnet with Args",
@@ -59,7 +62,7 @@
                 "--num_gpus",
                 "1",
                 "--batch_size",
-                "1",
+                "2",
                 "--max_iterations",
                 "600000",
                 "--model",
@@ -68,6 +71,7 @@
                 "poses",
                 "intrinsics",
                 "depth_range",
+                "masks",
                 "--optimizer",
                 "adam", //change this
                 "--lr",
@@ -75,10 +79,14 @@
                 "--loss",
                 "SL1Loss",
                 "--dataset",
-                "dtu",
+                //"blendedmvs.robust_mvd.mvd",
+                "dtu.mvsnet.mvd",
                 "--input_size",
-                "768",
-                "1152",
+                "600",
+                "800",
+                "--target_size",
+                "600",
+                "800",
                 "--scheduler",
                 "flownet_scheduler", //change this
                 "--no_tensorboard"
@@ -126,6 +134,9 @@
                 "flownet_scheduler", //change this
                 "--no_tensorboard"
             ],
+            "env": {
+                "CUDA_VISIBLE_DEVICES": "1"
+            }
         },
         {
             "name": "Python: Remote Train robustmvd with Args",
@@ -166,6 +177,9 @@
                 "flownet_scheduler",
                 "--no_tensorboard"
             ],
+            "env": {
+                "CUDA_VISIBLE_DEVICES": "1"
+            }
         },
         {
             "name": "Python: Remote Eval vis_mvsnet_wrapped with Args",
@@ -190,6 +204,9 @@
                 "896",
                 "1216"
             ],
+            "env": {
+                "CUDA_VISIBLE_DEVICES": "1"
+            }
         },
         {
             "name": "Python: Remote Eval mvsnet_pl_wrapped with Args",
@@ -214,6 +231,9 @@
                 "896",
                 "1216"
             ],
+            "env": {
+                "CUDA_VISIBLE_DEVICES": "1"
+            }
         },
         {
             "name": "Python: Remote Eval cvp_mvsnet_wrapped with Args",
@@ -238,6 +258,9 @@
                 "896",
                 "1216"
             ],
+            "env": {
+                "CUDA_VISIBLE_DEVICES": "1"
+            }
         },
         {
             "name": "Python: Current File",

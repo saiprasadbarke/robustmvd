@@ -19,7 +19,7 @@ class ConvBnReLU(nn.Module):
         self.bn = nn.BatchNorm2d(out_channels)
 
     def forward(self, x):
-        return self.bn(self.conv(x))
+        return F.relu(self.bn(self.conv(x)), inplace=True)
 
 
 class ConvBnReLU3D(nn.Module): #TODO: mvsnet_pl does not use the relu in the forward method but the cvp_mvsnet implementation does. Add an optional argument to the init method to configure the use of relu or leaky relu.
@@ -36,7 +36,7 @@ class ConvBnReLU3D(nn.Module): #TODO: mvsnet_pl does not use the relu in the for
         self.bn = nn.BatchNorm3d(out_channels)
 
     def forward(self, x):
-        return self.bn(self.conv(x))
+        return F.relu(self.bn(self.conv(x)), inplace=True)
 
 
 class FeatureNet(nn.Module):  #TODO: Modify this code to accept arguments for setting the inchannels, outchannels, kernel size, stride, and padding. This can then be used in cvp_mvsnet implementation. Need an additional optional argument for configuring the use of relu or leaky relu on the convolutions.
@@ -77,10 +77,9 @@ class CostRegNet(nn.Module): #TODO: Modify this code to accept arguments for set
         self.conv6 = ConvBnReLU3D(64, 64)
 
         self.conv7 = nn.Sequential(
-            nn.ConvTranspose3d(
-                64, 32, kernel_size=3, padding=1, output_padding=1, stride=2, bias=False
-            ),
+            nn.ConvTranspose3d(64, 32, kernel_size=3, padding=1, output_padding=1, stride=2, bias=False),
             nn.BatchNorm3d(32),
+            nn.ReLU(inplace=True)
         )
 
         self.conv9 = nn.Sequential(
@@ -88,6 +87,7 @@ class CostRegNet(nn.Module): #TODO: Modify this code to accept arguments for set
                 32, 16, kernel_size=3, padding=1, output_padding=1, stride=2, bias=False
             ),
             nn.BatchNorm3d(16),
+            nn.ReLU(inplace=True),
         )
 
         self.conv11 = nn.Sequential(
@@ -95,6 +95,7 @@ class CostRegNet(nn.Module): #TODO: Modify this code to accept arguments for set
                 16, 8, kernel_size=3, padding=1, output_padding=1, stride=2, bias=False
             ),
             nn.BatchNorm3d(8),
+            nn.ReLU(inplace=True)
         )
 
         self.prob = nn.Conv3d(8, 1, 3, stride=1, padding=1)
@@ -106,7 +107,7 @@ class CostRegNet(nn.Module): #TODO: Modify this code to accept arguments for set
         x = self.conv6(self.conv5(conv4))
         x = conv4 + self.conv7(x)
         del conv4
-        x = conv2 + self.conv9(x)
+        x = conv2 + self.conv9(x)[:, :, :, :75, :]
         del conv2
         x = conv0 + self.conv11(x)
         del conv0

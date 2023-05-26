@@ -1,0 +1,2 @@
+class PFMFileException(Exception):
+    pass

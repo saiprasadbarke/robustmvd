@@ -38,7 +38,7 @@ class MVSNet(nn.Module):
         self.sample_in_inv_depth_space = sample_in_inv_depth_space
 
     def forward(self, images, poses, intrinsics, keyview_idx, depth_range, **_):
-        N = images[0].shape[0]
+        N = images[0].shape[0] # batch size
         if depth_range is None:
             if self.sample_in_inv_depth_space:
                 depth_samples = (
@@ -70,9 +70,10 @@ class MVSNet(nn.Module):
                     min_depth[0], max_depth[0], self.num_sampling_steps, dtype=torch.float32
                 )
             depth_samples = torch.stack(N * [depth_samples])
-            depth_samples = (
-                depth_samples.transpose(0,1)
-            )  # (num_sampling_steps, N) to (N, num_sampling_steps)
+            depth_samples = depth_samples.cuda()
+            # depth_samples = (
+            #     depth_samples.transpose(0,1)
+            # )  # (num_sampling_steps, N) to (N, num_sampling_steps)
 
         proj_mats = []
         for idx, (intrinsic_batch, pose_batch) in enumerate(zip(intrinsics, poses)):
@@ -114,7 +115,7 @@ class MVSNet(nn.Module):
         # proj_mats: (B, V, 4, 4)
         # depth_samples: (B, D)
         B, V, _, H, W = images.shape
-        D = depth_samples.shape[1]
+        D = depth_samples.shape[1] # value of D should be 192
 
         # step 1. feature extraction
         # in: images; out: 32-channel feature maps
