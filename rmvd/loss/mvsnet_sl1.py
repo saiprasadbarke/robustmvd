@@ -32,7 +32,7 @@ class SL1Loss(nn.Module):
             loss, _ = torch.topk(loss.flatten(), 
                                  num_hard_samples)
 
-        return torch.mean(loss),None , None
+        return torch.mean(loss),{} , {}
 
 
         # run the rest of the pipeline in the evening. Start training on the cluster.

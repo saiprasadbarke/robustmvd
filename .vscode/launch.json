@@ -88,8 +88,8 @@
                 "600",
                 "800",
                 "--scheduler",
-                "flownet_scheduler"
-                //"--no_tensorboard"
+                "flownet_scheduler",
+                "--no_tensorboard"
             ],
             // "env": {
             //     "CUDA_VISIBLE_DEVICES": "1"
