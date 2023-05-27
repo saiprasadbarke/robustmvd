@@ -350,4 +350,4 @@ class DTUMvsnet(DTURobustMVD):
     def _init_samples_from_root_dir(self, scene_names=None, num_source_views=None):
         super()._init_samples_from_root_dir(scene_names=scene_names, num_source_views=num_source_views)
         print(f"{len(self.samples)} samples generated")
-        self.samples = self.samples[:2]
+        #self.samples = self.samples[:2]
