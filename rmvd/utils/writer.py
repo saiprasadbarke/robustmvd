@@ -26,7 +26,7 @@ from torch.utils.tensorboard import SummaryWriter
 from torch.utils.tensorboard.summary import make_np
 import wandb
 
-from .vis import vis, vis_image, vis_2d_array
+from .vis import vis, vis_image, vis_2d_array, check_vis
 
 EVENT_WRITERS = []
 EVENT_STORAGE = []
@@ -105,6 +105,8 @@ def put_tensor(name, tensor, step, **kwargs):
         tensor: tensor to write out
         step: step associated with tensor
     """
+    if filter and not check_vis(tensor):
+        return
     EVENT_STORAGE.append({"name": name, "write_type": EventType.TENSOR, "event": tensor, "step": step, "kwargs": kwargs})
 
 

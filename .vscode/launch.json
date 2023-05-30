@@ -62,7 +62,7 @@
                 "--training_type",
                 "mvd",
                 "--output",
-                "/misc/lmbraid19/barkes/robustmvd/training/mvsnet/debug_run",
+                "/misc/lmbraid19/barkes/robustmvd/training/mvsnet/debug_tensorboard",
                 "--num_gpus",
                 "2",
                 "--batch_size",
@@ -93,7 +93,7 @@
                 "800",
                 "--scheduler",
                 "flownet_scheduler",
-                "--no_tensorboard"
+                //"--no_tensorboard"
             ],
             // "env": {
             //     "CUDA_VISIBLE_DEVICES": "1"
