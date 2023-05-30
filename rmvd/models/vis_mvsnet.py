@@ -41,7 +41,7 @@ class VisMvsnet(ModelWrappers):
         self, images, poses, intrinsics, keyview_idx, depth_range, **_
     ):  # this is fixed
         # Extract the minimum and maximum depth from the depth_range input.
-
+        N = images[0].shape[0] # batch size
         min_depth, max_depth = depth_range
         # Calculate the step size for depth sampling based on the min_depth, max_depth, and the number of sampling steps.
         step_size = (max_depth - min_depth) / self.num_sampling_steps
@@ -49,7 +49,7 @@ class VisMvsnet(ModelWrappers):
         cams = []
         # for each intrinsic and pose in the input, create a camera matrix
         for intrinsic, pose in zip(intrinsics, poses):
-            cam = torch.zeros((4, 2, 4, 4), dtype=torch.float32, device=pose.device)
+            cam = torch.zeros((N, 2, 4, 4), dtype=torch.float32, device=pose.device)
             cam[:, 0, :, :] = pose
             cam[:, 1, :3, :3] = intrinsic
             cam[:, 1, 3, 0] = min_depth
@@ -181,7 +181,7 @@ class VisMvsnet(ModelWrappers):
         pred_depth_uncertainty = 1 - pred_depth_confidence
 
         pred = {"depth": pred_depth, "depth_uncertainty": pred_depth_uncertainty}
-        aux = {"outputs": outputs, "prob_maps": prob_maps}
+        aux = {"outputs": outputs, "prob_maps": prob_maps, "ref_cam": ref_cam}
 
         return pred, aux
 

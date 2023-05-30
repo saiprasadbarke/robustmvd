@@ -350,4 +350,52 @@ class DTUMvsnet(DTURobustMVD):
     def _init_samples_from_root_dir(self, scene_names=None, num_source_views=None):
         super()._init_samples_from_root_dir(scene_names=scene_names, num_source_views=num_source_views)
         print(f"{len(self.samples)} samples generated")
-        #self.samples = self.samples[:2]
+
+@register_dataset
+class DTUVisMvsnet(DTURobustMVD):
+    split = 'vismvsnet'
+
+    def _init_samples_from_root_dir(self, scene_names=None, num_source_views=None):
+
+        scenes = [x for x in os.listdir(self.root) if osp.isdir(osp.join(self.root, x))]
+        scenes = [x for x in scenes if x in scene_names] if scene_names is not None else scenes
+        scenes = sorted(scenes)
+        scenes = [DTUScene(osp.join(self.root, x)) for x in scenes]
+
+        for scene in (tqdm(scenes) if self.verbose else scenes):
+            for key_id in scene.source_ids.keys():
+
+                all_source_ids = scene.source_ids[key_id]
+                all_scores = scene.source_scores[key_id]
+                cur_num_source_views = num_source_views if num_source_views is not None else len(all_source_ids)
+
+                for light_idx in range(7):
+
+                    sample = DTUSample(
+                        name=scene.name
+                        + "/key{:02d}".format(key_id)
+                        + f"/light{light_idx}",
+                        base=scene.name,
+                    )
+                    all_ids = [key_id] + all_source_ids[:cur_num_source_views]
+                    images = [(x+1, light_idx) for x in all_ids] #image numbering in dtu starts from 1
+                    poses = all_ids
+                    masks = all_ids
+                    intrinsics = all_ids
+                    min_depth = scene.min_depths[key_id]
+                    max_depth = scene.max_depths[key_id]
+                    depth = key_id
+
+                    sample.data['images'] = images
+                    sample.data['poses'] = poses
+                    sample.data['intrinsics'] = intrinsics
+                    sample.data['masks'] = masks
+                    sample.data['depth'] = depth
+                    sample.data['depth_range'] = (min_depth, max_depth)
+                    sample.data['keyview_idx'] = 0
+
+                    # sample.data['_keyview_id'] = key_id
+                    # sample.data['_source_view_ids'] = source_ids
+                    # sample.data['_source_view_scores'] = source_scores
+
+                    self.samples.append(sample)

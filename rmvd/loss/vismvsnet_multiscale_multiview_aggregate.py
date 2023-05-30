@@ -22,16 +22,21 @@ class VismvnsetMultiscaleMultiviewAggregate(nn.Module):  # TODO
     def name(self):
         name = type(self).__name__
         return name
-
-    def forward(
-        self, outputs, gt, masks, ref_cam, max_d, occ_guide=False, mode="soft"
-    ):  # MVS
-        outputs, refined_depth = outputs
-
+    def forward(self, sample_inputs, sample_gt, pred, aux, iteration):
+    # def forward(
+    #     self, outputs, gt, masks, ref_cam, max_d, occ_guide=False, mode="soft"
+    # ):  # MVS
+        outputs = aux["outputs"] 
+        refined_depth = pred["depth"]
+        gt = sample_gt["depth"]
+        masks =sample_inputs['masks']
+        max_d = 192
+        mode = "soft"
+        occ_guide = False
+        ref_cam = aux["ref_cam"]
         depth_start = ref_cam[:, 1:2, 3:4, 0:1]  # n111
         depth_interval = ref_cam[:, 1:2, 3:4, 1:2]  # n111
         depth_end = depth_start + (max_d - 2) * depth_interval  # strict range
-        masks = [masks[:, i, ...] for i in range(masks.size()[1])]
 
         stage_losses = []
         stats = []
@@ -202,4 +207,5 @@ class VismvnsetMultiscaleMultiviewAggregate(nn.Module):  # TODO
             stage_losses[0] * 0.5 + stage_losses[1] * 1.0 + stage_losses[2] * 2.0
         )  # + l1*2.0
 
-        return loss, pair_loss, less1, less3, l1, stats, abs_err_scaled, valid
+        #return loss, pair_loss, less1, less3, l1, stats, abs_err_scaled, valid
+        return loss , {}, {}
