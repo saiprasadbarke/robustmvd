@@ -20,8 +20,7 @@ class VismvnsetMultiscaleMultiviewAggregate(nn.Module):  # TODO
 
     @property
     def name(self):
-        name = type(self).__name__
-        return name
+        return type(self).__name__
     def forward(self, sample_inputs, sample_gt, pred, aux, iteration):
     # def forward(
     #     self, outputs, gt, masks, ref_cam, max_d, occ_guide=False, mode="soft"
@@ -72,54 +71,40 @@ class VismvnsetMultiscaleMultiviewAggregate(nn.Module):  # TODO
                 and est_depth.size()[3] == pair_results[0][0].size()[3]
             )
             gt_interm = (
-                F.interpolate(
-                    gt,
-                    size=(pair_results[0][0].size()[2], pair_results[0][0].size()[3]),
-                    mode="bilinear",
-                    align_corners=False,
-                )
-                if not same_size
-                else gt_downsized
+                gt_downsized if same_size else F.interpolate(
+                                    gt,
+                                    size=(pair_results[0][0].size()[2], pair_results[0][0].size()[3]),
+                                    mode="bilinear",
+                                    align_corners=False,
+                                )
             )
             masks_interm = (
-                [
-                    F.interpolate(
-                        mask,
-                        size=(
-                            pair_results[0][0].size()[2],
-                            pair_results[0][0].size()[3],
-                        ),
-                        mode="nearest",
-                    )
-                    for mask in masks
-                ]
-                if not same_size
-                else masks_downsized
+                masks_downsized if same_size else [
+                                    F.interpolate(
+                                        mask,
+                                        size=(
+                                            pair_results[0][0].size()[2],
+                                            pair_results[0][0].size()[3],
+                                        ),
+                                        mode="nearest",
+                                    )
+                                    for mask in masks
+                                ]
             )
             in_range_interm = (
-                torch.min((gt_interm >= depth_start), (gt_interm <= depth_end))
-                if not same_size
-                else in_range
+                in_range if same_size else torch.min((gt_interm >= depth_start), (gt_interm <= depth_end))
             )
             masks_valid_interm = (
-                [torch.min((mask > 50), in_range_interm) for mask in masks_interm]
-                if not same_size
-                else masks_valid
+                masks_valid if same_size else [torch.min((mask > 50), in_range_interm) for mask in masks_interm]
             )  # mask and in_range
             masks_overlap_interm = (
-                [torch.min((mask > 200), in_range_interm) for mask in masks_interm]
-                if not same_size
-                else masks_overlap
+                masks_overlap if same_size else [torch.min((mask > 200), in_range_interm) for mask in masks_interm]
             )
             union_overlap_interm = (
-                bin_op_reduce(masks_overlap_interm, torch.max)
-                if not same_size
-                else union_overlap
+                union_overlap if same_size else bin_op_reduce(masks_overlap_interm, torch.max)
             )  # A(B+C)=AB+AC
             valid_interm = (
-                (union_overlap_interm if occ_guide else in_range_interm)
-                if not same_size
-                else valid
+                valid if same_size else union_overlap_interm if occ_guide else in_range_interm
             )
 
             abs_err = (est_depth - gt_downsized).abs()
