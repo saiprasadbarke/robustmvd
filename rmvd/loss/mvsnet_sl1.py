@@ -20,10 +20,12 @@ class SL1Loss(nn.Module):
     def forward(self, sample_inputs, sample_gt, pred, aux, iteration):
         inputs = pred['depth']
         targets = sample_gt['depth']
-        targets = F.interpolate(targets, size=inputs.shape[-2:], mode='bilinear', align_corners=True)
-        masks =sample_inputs['masks']
-        masks = masks[0].unsqueeze(1)
-        masks = F.interpolate(masks, size=inputs.shape[-2:], mode='bilinear', align_corners=True)
+        
+        masks =sample_inputs['masks'] if 'masks' in sample_inputs else targets > 0
+        masks = masks[0].unsqueeze(1) if isinstance(masks, list) else masks
+        with torch.no_grad():
+            targets = F.interpolate(targets, size=inputs.shape[-2:], mode='bilinear', align_corners=True)
+            masks = F.interpolate(masks.float(), size=inputs.shape[-2:], mode='nearest')
         masks = masks > 0.5
         loss = self.loss(inputs[masks], targets[masks])
 

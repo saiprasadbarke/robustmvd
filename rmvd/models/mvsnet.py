@@ -70,7 +70,7 @@ class MVSNet(nn.Module):
                     min_depth[0], max_depth[0], self.num_sampling_steps, dtype=torch.float32
                 )
             depth_samples = torch.stack(N * [depth_samples])
-            depth_samples = depth_samples.cuda()
+            depth_samples = depth_samples.to(images[0].device)
             # depth_samples = (
             #     depth_samples.transpose(0,1)
             # )  # (num_sampling_steps, N) to (N, num_sampling_steps)
