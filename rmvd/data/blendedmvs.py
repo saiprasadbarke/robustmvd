@@ -59,34 +59,29 @@ BMVS_VAL_SCENES = ['5b7a3890fc8fcf6781e2593a', '5c189f2326173c3a09ed7ef3', '5b95
 def readPFM(file):
     file = open(file, 'rb')
 
-    # Read the first line and determine if it contain color information or not
     header = file.readline().rstrip()
-    if header.decode("ascii") == "PF":  # Color image
+    if header.decode("ascii") == 'PF':
         color = True
-    elif header.decode("ascii") == "Pf":  # Greyscale depthmap
+    elif header.decode("ascii") == 'Pf':
         color = False
     else:
-        raise Exception("Not a PFM file.")
+        raise Exception('Not a PFM file.')
 
-    # Read the second line and get the image size using a regular expression and store the width and height in seperate variables
-    dim_match = re.match(r"^(\d+)\s(\d+)\s$", file.readline().decode("ascii"))
+    dim_match = re.match(r'^(\d+)\s(\d+)\s$', file.readline().decode("ascii"))
     if dim_match:
         width, height = list(map(int, dim_match.groups()))
     else:
-        raise Exception("Malformed PFM header.")
+        raise Exception('Malformed PFM header.')
 
-    # Read the third line of the file and get the scale factor. This scale factor is used to covert the values in the file to real world units
     scale = float(file.readline().decode("ascii").rstrip())
     if scale < 0:  # little-endian
-        endian = "<"
+        endian = '<'
         scale = -scale
     else:
-        endian = ">"  # big-endian
+        endian = '>'  # big-endian
 
-    data = np.fromfile(file, endian + "f")
-    shape = (
-        (height, width, 3) if color else (height, width)
-    )  # Add channel dimension and return a (H, W, C) tuple if color else just return (H,W)
+    data = np.fromfile(file, endian + 'f')
+    shape = (height, width, 3) if color else (height, width)
 
     data = np.reshape(data, shape)
     data = np.flipud(data)
@@ -96,61 +91,38 @@ def readPFM(file):
 
 
 def load_image(root, path):
-    """This function loads an image from disk and returns it as a numpy array"""
     path = f"blended_images/{path:08d}_masked.jpg"
     img_path = osp.join(root, path)
-    img = np.array(Image.open(img_path))  # H,W,3 ; dtype np.uint8
+    img = np.array(Image.open(img_path))
     img = img.transpose(2, 0, 1).astype(np.float32)  # 3,H,W ; dtype np.uint8
     return img
 
 
 def load_pose(root, path):
-    """This function loads the camera pose from a file on the disk and returns it as a numpy array"""
     path = f"cams/{path:08d}_cam.txt"
     pose_path = osp.join(root, path)
     with open(pose_path) as pose_file:
         pose_lines = [x[:-1] for x in pose_file.readlines()][1:5]
-        pose_elements = [float(x) for line in pose_lines for x in line.split()]
-        pose_matrix = np.array(
-            [
-                pose_elements[0:4],
-                pose_elements[4:8],
-                pose_elements[8:12],
-                pose_elements[12:16],
-            ],
-            dtype=np.float32,
-        )
-    return pose_matrix  # 4, 4
+        pose_eles = [float(x) for line in pose_lines for x in line.split()]
+        pose = np.array([pose_eles[0:4], pose_eles[4:8], pose_eles[8:12], pose_eles[12:16], ], dtype=np.float32)
+    return pose  # 4, 4
 
 
 def load_intrinsics(root, path):
-    """This function loads camera intrincs from a file on the disk and returns it as a numpy array"""
     path = f"cams/{path:08d}_cam.txt"
     pose_path = osp.join(root, path)
     with open(pose_path) as pose_file:
         intrinsic_lines = [x[:-1] for x in pose_file.readlines()][7:10]
-        intrinsic_elements = [
-            float(x) for line in intrinsic_lines for x in line.split()
-        ]
-        intrinsic_matrix = np.array(
-            [
-                intrinsic_elements[0:3],
-                intrinsic_elements[3:6],
-                intrinsic_elements[6:9],
-            ],
-            dtype=np.float32,
-        )
-    return intrinsic_matrix  # 3, 3
+        intrinsic_eles = [float(x) for line in intrinsic_lines for x in line.split()]
+        intrinsic = np.array([intrinsic_eles[0:3], intrinsic_eles[3:6], intrinsic_eles[6:9], ], dtype=np.float32)
+    return intrinsic  # 3, 3
 
 
 def load_depth(root, path):
-    """This function loads rendered depth maps from a file on the disk and returns it as a numpy array"""
     path = f"rendered_depth_maps/{path:08d}.pfm"
     depth = readPFM(osp.join(root, path))
-    depth = np.nan_to_num(
-        depth, posinf=0.0, neginf=0.0, nan=0.0
-    )  # Replace NaNs with 0.0
-    depth = np.expand_dims(depth, 0).astype(np.float32)  # (1,H,W)
+    depth = np.nan_to_num(depth, posinf=0., neginf=0., nan=0.)
+    depth = np.expand_dims(depth, 0).astype(np.float32)  # 1HW
     return depth  # 1, H, W, np.float32
 
 
@@ -196,7 +168,8 @@ class BlendedMVSMinDepth:
         with open(pose_path) as pose_file:
             depth_line = pose_file.readlines()[11]
             depths = [float(x) for x in depth_line.split(" ")]
-            min_depth, max_depth = depths[0], depths[-1]
+            min_depth, _ = depths[0], depths[-1]
+            min_depth = np.float32(min_depth)
         return min_depth  # float value
 
 
@@ -209,28 +182,29 @@ class BlendedMVSMaxDepth:
         with open(pose_path) as pose_file:
             depth_line = pose_file.readlines()[11]
             depths = [float(x) for x in depth_line.split(" ")]
-            min_depth, max_depth = depths[0], depths[-1]
+            _, max_depth = depths[0], depths[-1]
+            max_depth = np.float32(max_depth)
         return max_depth  # float value
 
 
 def load(key, root, val):
-    """This function is a general function that dispatches to the appropriate load function above based on the key argument. If the value of the key is a list, then each element of the list is recursively loaded using the same load function. Otherwise, the appropriate load function is called based on the key, and the result is returned."""
     if isinstance(val, list):
         return [load(key, root, v) for v in val]
     else:
-        if key == "images":
+        if key == 'images':
             return load_image(root, val)
-        elif key == "depth":
+        elif key == 'depth':
             return load_depth(root, val)
-        elif key == "intrinsics":
+        elif key == 'intrinsics':
             return load_intrinsics(root, val)
-        elif key == "poses":
+        elif key == 'poses':
             return load_pose(root, val)
         else:
             return val
 
 
 class BlendedMVSSample(Sample):
+
     def __init__(self, base, name):
         self.base = base
         self.name = name
@@ -239,7 +213,7 @@ class BlendedMVSSample(Sample):
     def load(self, root):
 
         base = osp.join(root, self.base)
-        out_dict = {"_base": base, "_name": self.name}
+        out_dict = {'_base': base, '_name': self.name}
 
         for key, val in self.data.items():
             out_dict[key] = load(key, base, val)
@@ -289,15 +263,15 @@ class BlendedMVSSequence:
     
 class BlendedMVS(Dataset):
     
-    def _init_samples(self, scene_names=None, num_source_views=None):
+    def _init_samples(self, scene_names=None, num_source_views=None, all_combinations=True):
         sample_list_path = _get_sample_list_path(self.name)
         if sample_list_path is not None and osp.isfile(sample_list_path):
             super()._init_samples_from_list()
         else:
-            self._init_samples_from_root_dir(scene_names=scene_names, num_source_views=num_source_views)
+            self._init_samples_from_root_dir(scene_names=scene_names, num_source_views=num_source_views, all_combinations=all_combinations)
             self._write_samples_list()
 
-    def _init_samples_from_root_dir(self, scene_names=None, num_source_views=None):
+    def _init_samples_from_root_dir(self, scene_names=None, num_source_views=None, all_combinations=True):
 
         from itertools import combinations
 
@@ -312,7 +286,11 @@ class BlendedMVS(Dataset):
                 all_source_ids = seq.source_ids[key_id]
                 all_source_scores = seq.source_scores[key_id]
                 cur_num_source_views = num_source_views if num_source_views is not None else len(all_source_ids)
-                source_id_combinations = [list(x) for x in list(combinations(all_source_ids, cur_num_source_views))]
+                
+                if all_combinations:
+                    source_id_combinations = [list(x) for x in list(combinations(all_source_ids, cur_num_source_views))]
+                else:
+                    source_id_combinations = [all_source_ids[:cur_num_source_views]]
 
                 for source_ids in source_id_combinations:
                     sample = BlendedMVSSample(name=seq.name + "/key{:06d}".format(key_id), base=seq.name)
@@ -343,9 +321,9 @@ class BlendedMVS(Dataset):
 
 class BlendedMVSSeq4Train(BlendedMVS):  # intentionally not registered as dataset, as this split is not used anywhere
 
-    base_dataset = "blendedmvs"
-    split = "seq4_train"
-    dataset_type = "mvd"
+    base_dataset = 'blendedmvs'
+    split = 'seq4_train'
+    dataset_type = 'mvd'
 
     def __init__(self, root=None, layouts=None, **kwargs):
         root = root if root is not None else self._get_path("blendedmvs", "root")
@@ -358,13 +336,34 @@ class BlendedMVSSeq4Train(BlendedMVS):  # intentionally not registered as datase
         ]
         layouts = default_layouts + layouts if layouts is not None else default_layouts
 
-        super().__init__(scene_names=scene_names, num_source_views=4, root=root, layouts=layouts, **kwargs)
+        super().__init__(scene_names=scene_names, num_source_views=4, all_combinations=True, root=root, layouts=layouts, **kwargs)
         
         
 @register_default_dataset
 class BlendedMVSSeq4TrainSmall(BlendedMVSSeq4Train):
     split = 'robust_mvd'
 
-    def _init_samples_from_root_dir(self, scene_names=None, num_source_views=None):
-        super()._init_samples_from_root_dir(scene_names=scene_names, num_source_views=num_source_views)
+    def _init_samples_from_root_dir(self, scene_names=None, num_source_views=None, all_combinations=True):
+        super()._init_samples_from_root_dir(scene_names=scene_names, num_source_views=num_source_views, all_combinations=all_combinations)
         self.samples = self.samples[::2]
+
+
+@register_dataset
+class BlendedMVSMVSNetTrain(BlendedMVS):
+
+    base_dataset = 'blendedmvs'
+    split = 'train_mvsnet'
+    dataset_type = 'mvd'
+
+    def __init__(self, root=None, layouts=None, **kwargs):
+        root = root if root is not None else self._get_path("blendedmvs", "root")
+        
+        scene_names = BMVS_TRAIN_SCENES
+
+        default_layouts = [
+            MVDUnstructuredDefaultLayout("default", num_views=3, max_views=3),
+            AllImagesLayout("all_images", num_views=3),
+        ]
+        layouts = default_layouts + layouts if layouts is not None else default_layouts
+
+        super().__init__(scene_names=scene_names, num_source_views=2, all_combinations=False, root=root, layouts=layouts, **kwargs)
