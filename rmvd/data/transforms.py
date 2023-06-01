@@ -64,7 +64,7 @@ class ResizeInputs:
         #resize masks
         if "masks" in sample:
             masks = sample["masks"]
-            masks = [resize(mask, list(mask.shape[:-2]) + [ht, wd], order=self.__interpolation_order) for mask in masks]
+            masks = resize(masks, list(masks.shape[:-2]) + [ht, wd], order=self.__interpolation_order)
             sample["masks"] = masks
         
         # resize intrinsics:
