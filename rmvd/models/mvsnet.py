@@ -153,16 +153,31 @@ class MVSNet(nn.Module):
             prob_volume_sum4 = 4 * F.avg_pool3d(
                 F.pad(prob_volume.unsqueeze(1), pad=(0, 0, 0, 0, 1, 2)),
                 (4, 1, 1),
-                stride=1,
+                stride=1
             ).squeeze(
                 1
             )  # (B, D, h, w)
             # find the (rounded) index that is the final prediction
+            # print(f"Min prob_volume: {prob_volume.min()}, Max prob_volume: {prob_volume.max()}")
+            # print(f"Min arange: {torch.arange(D, device=prob_volume.device, dtype=prob_volume.dtype).min()}, Max arange: {torch.arange(D, device=prob_volume.device, dtype=prob_volume.dtype).max()}")
             depth_index = depth_regression(
                 prob_volume,
                 torch.arange(D, device=prob_volume.device, dtype=prob_volume.dtype),
             ).long()  # (B, h, w)
+            # print(f"Min depth_index: {depth_index.min()}, Max depth_index: {depth_index.max()}")
+            # depth_index = torch.arange(D, device=prob_volume.device, dtype=prob_volume.dtype)
+            # depth_index = depth_index.view(1, -1, 1, 1)
+            # pred_index = torch.sum(prob_volume * depth_index, dim=1, keepdim=True).long()
             # the confidence is the 4-sum probability at this index
+            # print(f"prob_volume_sum4 size: {prob_volume_sum4.size()}")
+            # print(f"depth_index size before unsqueeze: {depth_index.size()}")
+            # depth_index_unsq = depth_index.unsqueeze(1)
+            # print(f"depth_index size after unsqueeze: {depth_index_unsq.size()}")
+
+            # # checking for index out-of-bound errors
+            # assert depth_index_unsq.max() < prob_volume_sum4.size(1), "Max index is out of bounds"
+            # assert depth_index_unsq.min() >= 0, "Min index is out of bounds"
+
             confidence = torch.gather(
                 prob_volume_sum4, 1, depth_index.unsqueeze(1)
             ).squeeze(

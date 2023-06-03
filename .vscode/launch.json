@@ -62,11 +62,11 @@
                 "--training_type",
                 "mvd",
                 "--output",
-                "/misc/lmbraid19/barkes/robustmvd/training/mvsnet/debug_blendedmvs",
+                "/misc/lmbraid19/barkes/robustmvd/training/mvsnet/debug_blendedmvs_sai",
                 "--num_gpus",
-                "0",
+                "1",
                 "--batch_size",
-                "2",
+                "1",
                 "--max_iterations",
                 "600000",
                 "--model",
@@ -83,21 +83,24 @@
                 "--loss",
                 "SL1Loss",
                 "--dataset",
-                //"blendedmvs.robust_mvd.mvd",
                 "blendedmvs.train_mvsnet.mvd",
-                "--input_size",
-                "600",
-                "800",
-                "--target_size",
-                "600",
-                "800",
+                //"dtu.mvsnet.mvd",
+                // "--input_size",
+                // "600",
+                // "800",
+                // "--target_size",
+                // "600",
+                // "800",
                 "--scheduler",
                 "flownet_scheduler",
-                //"--no_tensorboard"
+                // "--no_tensorboard",
+                 "--log_interval",
+                 "100"
             ],
-            // "env": {
-            //     "CUDA_VISIBLE_DEVICES": "1"
-            // }
+             "env": {
+                "CUDA_VISIBLE_DEVICES": "1",
+                "CUDA_LAUNCH_BLOCKING":"1"
+            }
         },
         {
             "name": "Python: Remote Train cvp_mvsnet with Args",

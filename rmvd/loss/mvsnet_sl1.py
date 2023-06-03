@@ -20,11 +20,11 @@ class SL1Loss(nn.Module):
         targets = sample_gt['depth']
         
         masks =sample_inputs['masks'] if 'masks' in sample_inputs else targets > 0
-        masks = masks[0].unsqueeze(1) if isinstance(masks, list) else masks
+        masks = masks.unsqueeze(1) if masks.dim() == 3 else masks
         #with torch.no_grad():
         targets = F.interpolate(targets, size=inputs.shape[-2:], mode='bilinear', align_corners=True)
-        masks = F.interpolate(masks.float(), size=inputs.shape[-2:], mode='nearest')
-        masks = masks > 0.5
+        masks = F.interpolate(masks.float(), size=inputs.shape[-2:], mode='bilinear', align_corners=True)
+        masks = masks > 0
         loss = self.loss(inputs[masks], targets[masks])
 
         return torch.mean(loss),{} , {}
