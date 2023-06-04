@@ -370,7 +370,7 @@ class DTUMVSnetTest(DTU):
     split = 'mvsnet_test'
     dataset_type = 'mvd'
 
-    def __init__(self, scene_names=scene_names, root=None, layouts=None, **kwargs):
+    def __init__(self, root=None, layouts=None, **kwargs):
         root = root if root is not None else self._get_path("dtu", "root")
         scene_names = DTU_EVAL_SCENES
         default_layouts = [
