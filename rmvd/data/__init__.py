@@ -5,12 +5,12 @@ from .registry import register_augmentation, list_augmentations, has_augmentatio
 # import all datasets; this triggers the registration of the datasets in the registry
 from .eth3d import ETH3DTrainRobustMVD
 from .kitti import KITTIRobustMVD, KITTIEigenDenseDepthTest
-from .dtu import DTURobustMVD, DTUMvsnet
+from .dtu import DTURobustMVD, DTUMvsnetTrain, DTUMVSnetTest
 from .scannet import ScanNetRobustMVD
 from .tanks_and_temples import TanksAndTemplesTrainRobustMVD
 from .flyingthings3d import FlyingThings3DSeq4Train
 from .staticthings3d import StaticThings3DSeq4Train
-from .blendedmvs import BlendedMVSSeq4TrainSmall
+from .blendedmvs import BlendedMVSSeq4TrainSmall, BlendedMVSMVSNetEval, BlendedMVSMVSNetTrain
 
 # import all augmentations; this triggers the registration of the augmentations in the registry
 from .augmentations import robust_mvd_augmentations_staticthings3d, robust_mvd_augmentations_blendedmvs

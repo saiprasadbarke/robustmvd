@@ -367,3 +367,23 @@ class BlendedMVSMVSNetTrain(BlendedMVS):
         layouts = default_layouts + layouts if layouts is not None else default_layouts
 
         super().__init__(scene_names=scene_names, num_source_views=2, all_combinations=False, root=root, layouts=layouts, **kwargs)
+
+@register_dataset
+class BlendedMVSMVSNetEval(BlendedMVS):
+
+    base_dataset = 'blendedmvs'
+    split = 'test_mvsnet'
+    dataset_type = 'mvd'
+
+    def __init__(self, root=None, layouts=None, **kwargs):
+        root = root if root is not None else self._get_path("blendedmvs", "root")
+        
+        scene_names = BMVS_VAL_SCENES
+
+        default_layouts = [
+            MVDUnstructuredDefaultLayout("default", num_views=3, max_views=3),
+            AllImagesLayout("all_images", num_views=3),
+        ]
+        layouts = default_layouts + layouts if layouts is not None else default_layouts
+
+        super().__init__(scene_names=scene_names, num_source_views=2, all_combinations=False, root=root, layouts=layouts, **kwargs)

@@ -25,6 +25,9 @@ DTU_TRAIN_SCENES = ["scan2","scan6","scan7","scan8","scan14","scan16","scan18","
 DTU_VAL_SCENES = ["scan3","scan5","scan17", "scan21", "scan28", "scan35", "scan37", "scan38", "scan40", 
                   "scan43", "scan56", "scan59", "scan66", "scan67", "scan82", "scan86", "scan106", "scan117"]
 
+
+DTU_EVAL_SCENES = ["scan1", "scan4", "scan9", "scan10", "scan11", "scan12", "scan13", "scan15", "scan23", "scan24", "scan29", "scan32", "scan33", "scan34", "scan48", "scan49", "scan62", "scan75", "scan77", "scan110", "scan114", "scan118"]
+
 def readPFM(file):
     file = open(file, 'rb')
 
@@ -272,6 +275,9 @@ class DTUScene:
         return len(self.images)
 
 class DTU(Dataset):
+
+    base_dataset = 'dtu'
+
     def _init_samples(self, scene_names=None, num_source_views=None):
         sample_list_path = _get_sample_list_path(self.name)
         if sample_list_path is not None and osp.isfile(sample_list_path):
@@ -326,10 +332,9 @@ class DTU(Dataset):
                     self.samples.append(sample)
 @register_default_dataset
 class DTURobustMVD(DTU):
-    base_dataset = 'dtu'
+
     split = 'robustmvd'
     dataset_type = 'mvd'
-
     def __init__(self, root=None, layouts=None, **kwargs):
         root = root if root is not None else self._get_path("dtu", "root")
         scene_names = DTU_TRAIN_SCENES
@@ -343,59 +348,38 @@ class DTURobustMVD(DTU):
 
 
 @register_dataset
-class DTUMvsnet(DTURobustMVD):
+class DTUMvsnetTrain(DTU):
 
-    split = 'mvsnet'
-    
-    def _init_samples_from_root_dir(self, scene_names=None, num_source_views=None):
-        super()._init_samples_from_root_dir(scene_names=scene_names, num_source_views=num_source_views)
-        print(f"{len(self.samples)} samples generated")
+    split = 'mvsnet_train'
+    dataset_type = 'mvd'
+
+    def __init__(self, root=None, layouts=None, **kwargs):
+        root = root if root is not None else self._get_path("dtu", "root")
+        scene_names = DTU_TRAIN_SCENES
+        default_layouts = [
+            MVDUnstructuredDefaultLayout("default", num_views=11, max_views=4),
+            AllImagesLayout("all_images", num_views=11),
+        ]
+        layouts = default_layouts + layouts if layouts is not None else default_layouts
+
+        super().__init__(scene_names= scene_names, num_source_views=2,root=root, layouts=layouts, **kwargs)
 
 @register_dataset
-class DTUVisMvsnet(DTURobustMVD):
-    split = 'vismvsnet'
+class DTUMVSnetTest(DTU):
 
-    def _init_samples_from_root_dir(self, scene_names=None, num_source_views=None):
+    split = 'mvsnet_test'
+    dataset_type = 'mvd'
 
-        scenes = [x for x in os.listdir(self.root) if osp.isdir(osp.join(self.root, x))]
-        scenes = [x for x in scenes if x in scene_names] if scene_names is not None else scenes
-        scenes = sorted(scenes)
-        scenes = [DTUScene(osp.join(self.root, x)) for x in scenes]
+    def __init__(self, scene_names=scene_names, root=None, layouts=None, **kwargs):
+        root = root if root is not None else self._get_path("dtu", "root")
+        scene_names = DTU_EVAL_SCENES
+        default_layouts = [
+            MVDUnstructuredDefaultLayout("default", num_views=11, max_views=4),
+            AllImagesLayout("all_images", num_views=11),
+        ]
+        layouts = default_layouts + layouts if layouts is not None else default_layouts
 
-        for scene in (tqdm(scenes) if self.verbose else scenes):
-            for key_id in scene.source_ids.keys():
+        super().__init__(scene_names= scene_names, num_source_views=2,root=root, layouts=layouts, **kwargs)
 
-                all_source_ids = scene.source_ids[key_id]
-                all_scores = scene.source_scores[key_id]
-                cur_num_source_views = num_source_views if num_source_views is not None else len(all_source_ids)
 
-                for light_idx in range(7):
 
-                    sample = DTUSample(
-                        name=scene.name
-                        + "/key{:02d}".format(key_id)
-                        + f"/light{light_idx}",
-                        base=scene.name,
-                    )
-                    all_ids = [key_id] + all_source_ids[:cur_num_source_views]
-                    images = [(x+1, light_idx) for x in all_ids] #image numbering in dtu starts from 1
-                    poses = all_ids
-                    masks = all_ids
-                    intrinsics = all_ids
-                    min_depth = scene.min_depths[key_id]
-                    max_depth = scene.max_depths[key_id]
-                    depth = key_id
-
-                    sample.data['images'] = images
-                    sample.data['poses'] = poses
-                    sample.data['intrinsics'] = intrinsics
-                    sample.data['masks'] = masks
-                    sample.data['depth'] = depth
-                    sample.data['depth_range'] = (min_depth, max_depth)
-                    sample.data['keyview_idx'] = 0
-
-                    # sample.data['_keyview_id'] = key_id
-                    # sample.data['_source_view_ids'] = source_ids
-                    # sample.data['_source_view_scores'] = source_scores
-
-                    self.samples.append(sample)
