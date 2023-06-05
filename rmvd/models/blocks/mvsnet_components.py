@@ -107,7 +107,7 @@ class CostRegNet(nn.Module): #TODO: Modify this code to accept arguments for set
         x = self.conv6(self.conv5(conv4))
         x = conv4 + self.conv7(x)
         del conv4
-        x = conv2 + self.conv9(x)[:, :, :, :75, :]
+        x = conv2 + self.conv9(x)[:, :, :, :conv2.shape[3], :]
         del conv2
         x = conv0 + self.conv11(x)
         del conv0

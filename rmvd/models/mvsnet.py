@@ -39,6 +39,7 @@ class MVSNet(nn.Module):
 
     def forward(self, images, poses, intrinsics, keyview_idx, depth_range, **_):
         N = images[0].shape[0] # batch size
+        # Create the depth samples from the minimum and maximum depth. If no depth range is provided, use the default range [0.2,100]
         if depth_range is None:
             if self.sample_in_inv_depth_space:
                 depth_samples = (
@@ -51,8 +52,6 @@ class MVSNet(nn.Module):
                 depth_samples = torch.linspace(
                     0.2, 100, self.num_sampling_steps, dtype=torch.float32
                 )
-
-            depth_samples = torch.stack(N * [depth_samples])
         else:
             min_depth, max_depth = depth_range
             if self.sample_in_inv_depth_space:
@@ -69,12 +68,9 @@ class MVSNet(nn.Module):
                 depth_samples = torch.linspace(
                     min_depth[0], max_depth[0], self.num_sampling_steps, dtype=torch.float32
                 )
-            depth_samples = torch.stack(N * [depth_samples])
-            depth_samples = depth_samples.to(images[0].device)
-            # depth_samples = (
-            #     depth_samples.transpose(0,1)
-            # )  # (num_sampling_steps, N) to (N, num_sampling_steps)
-
+            
+        depth_samples = torch.stack(N * [depth_samples])
+        depth_samples = depth_samples.to(images[0].device)
         proj_mats = []
         for idx, (intrinsic_batch, pose_batch) in enumerate(zip(intrinsics, poses)):
             proj_mat_batch = []
@@ -109,7 +105,7 @@ class MVSNet(nn.Module):
         images = torch.stack(images, 1)  # N, num_views, 3, H, W
         proj_mats = torch.stack(proj_mats, 1)  # N, num_views, 4, 4
 
-        ################## End of transformations. Maybe add this above part to the input adapter. ##################
+        ################## End of transformations.##################
 
         # images: (B, V, 3, H, W)
         # proj_mats: (B, V, 4, 4)
@@ -150,39 +146,11 @@ class MVSNet(nn.Module):
 
         with torch.no_grad():
             # sum probability of 4 consecutive depth indices
-            prob_volume_sum4 = 4 * F.avg_pool3d(
-                F.pad(prob_volume.unsqueeze(1), pad=(0, 0, 0, 0, 1, 2)),
-                (4, 1, 1),
-                stride=1
-            ).squeeze(
-                1
-            )  # (B, D, h, w)
-            # find the (rounded) index that is the final prediction
-            # print(f"Min prob_volume: {prob_volume.min()}, Max prob_volume: {prob_volume.max()}")
-            # print(f"Min arange: {torch.arange(D, device=prob_volume.device, dtype=prob_volume.dtype).min()}, Max arange: {torch.arange(D, device=prob_volume.device, dtype=prob_volume.dtype).max()}")
-            depth_index = depth_regression(
-                prob_volume,
-                torch.arange(D, device=prob_volume.device, dtype=prob_volume.dtype),
-            ).long()  # (B, h, w)
-            # print(f"Min depth_index: {depth_index.min()}, Max depth_index: {depth_index.max()}")
-            # depth_index = torch.arange(D, device=prob_volume.device, dtype=prob_volume.dtype)
-            # depth_index = depth_index.view(1, -1, 1, 1)
-            # pred_index = torch.sum(prob_volume * depth_index, dim=1, keepdim=True).long()
-            # the confidence is the 4-sum probability at this index
-            # print(f"prob_volume_sum4 size: {prob_volume_sum4.size()}")
-            # print(f"depth_index size before unsqueeze: {depth_index.size()}")
-            # depth_index_unsq = depth_index.unsqueeze(1)
-            # print(f"depth_index size after unsqueeze: {depth_index_unsq.size()}")
+            prob_volume_sum4 = 4 * F.avg_pool3d(F.pad(prob_volume.unsqueeze(1), pad=(0, 0, 0, 0, 1, 2)),(4, 1, 1),stride=1).squeeze(1)  # (B, D, h, w)
+            
+            depth_index = depth_regression(prob_volume,torch.arange(D, device=prob_volume.device,dtype=prob_volume.dtype),).long()  # (B, h, w)
 
-            # # checking for index out-of-bound errors
-            # assert depth_index_unsq.max() < prob_volume_sum4.size(1), "Max index is out of bounds"
-            # assert depth_index_unsq.min() >= 0, "Min index is out of bounds"
-
-            confidence = torch.gather(
-                prob_volume_sum4, 1, depth_index.unsqueeze(1)
-            ).squeeze(
-                1
-            )  # (B, h, w)
+            confidence = torch.gather(prob_volume_sum4, 1, depth_index.unsqueeze(1)).squeeze(1)  # (B, h, w)
 
         pred_depth_uncertainty = 1 - confidence
 
@@ -195,33 +163,25 @@ class MVSNet(nn.Module):
         return pred, aux
 
     def input_adapter(
-        self, images, keyview_idx, poses=None, intrinsics=None, depth_range=None
+        self, images, keyview_idx, poses=None, intrinsics=None, depth_range=None, masks=None
     ):
         device = get_torch_model_device(self)
 
-        orig_ht, orig_wd = images[0].shape[-2:]
-        ht, wd = int(math.ceil(orig_ht / 64.0) * 64.0), int(
-            math.ceil(orig_wd / 64.0) * 64.0
-        )
-        if (orig_ht != ht) or (orig_wd != wd):
-            resized = ResizeInputs(size=(ht, wd))(
-                {"images": images, "intrinsics": intrinsics}
-            )
-            images = resized["images"]
-            intrinsics = resized["intrinsics"]
+        # orig_ht, orig_wd = images[0].shape[-2:]
+        # ht, wd = int(math.ceil(orig_ht / 64.0) * 64.0), int(
+        #     math.ceil(orig_wd / 64.0) * 64.0
+        # )
+        # if (orig_ht != ht) or (orig_wd != wd):
+        #     resized = ResizeInputs(size=(ht, wd))(
+        #         {"images": images, "intrinsics": intrinsics}
+        #     )
+        #     images = resized["images"]
+        #     intrinsics = resized["intrinsics"]
+        
+        # TODO: Add augmentations here. 
 
-        for idx, image_batch in enumerate(images):
-            tmp_images = []
-            image_batch = image_batch.transpose(0, 2, 3, 1)
-            for image in image_batch:
-                image = self.input_transform(image.astype(np.uint8)).float()
-                tmp_images.append(image)
-
-            image_batch = torch.stack(tmp_images)
-            images[idx] = image_batch
-
-        images, keyview_idx, intrinsics, poses, depth_samples = to_torch(
-            (images, keyview_idx, intrinsics, poses, depth_samples), device=device
+        images, keyview_idx, intrinsics, poses, depth_range, masks = to_torch(
+            (images, keyview_idx, intrinsics, poses, depth_range, masks), device=device
         )
 
         sample = {
@@ -230,6 +190,7 @@ class MVSNet(nn.Module):
             "intrinsics": intrinsics,
             "keyview_idx": keyview_idx,
             "depth_range": depth_range,
+            "masks": masks,
         }
         return sample
 
@@ -239,7 +200,7 @@ class MVSNet(nn.Module):
 
 
 @register_model(trainable=False)
-def mvsnet(pretrained=True, weights=None, train=False, num_gpus=1, **kwargs):
+def mvsnet_train(pretrained=True, weights=None, train=False, num_gpus=1, **kwargs):
     # assert pretrained and (
     #     weights is None
     # ), "Model supports only pretrained=True, weights=None."
@@ -248,6 +209,39 @@ def mvsnet(pretrained=True, weights=None, train=False, num_gpus=1, **kwargs):
         model_cls=MVSNet,
         cfg=cfg,
         weights=None,
+        train=train,
+        num_gpus=num_gpus,
+    )
+    return model
+
+
+@register_model(trainable=False)
+def mvsnet_dtu_test(pretrained=True, weights=None, train=False, num_gpus=1, **kwargs):
+    pretrained_weights = (
+        "/misc/lmbraid19/barkes/robustmvd/training/mvsnet/debug_run/checkpoints/snapshot-iter-000082883.pt"
+    )
+    weights = pretrained_weights if (pretrained and weights is None) else None
+    cfg = {"sample_in_inv_depth_space": False, "num_sampling_steps": 192}
+    model = build_model_with_cfg(
+        model_cls=MVSNet,
+        cfg=cfg,
+        weights=pretrained_weights,
+        train=train,
+        num_gpus=num_gpus,
+    )
+    return model
+
+@register_model(trainable=False)
+def mvsnet_bmvs_test(pretrained=True, weights=None, train=False, num_gpus=1, **kwargs):
+    pretrained_weights = (
+        "/misc/lmbraid19/barkes/robustmvd/training/mvsnet/debug_blendedmvs/checkpoints/snapshot-iter-000129930.pt"
+    )
+    weights = pretrained_weights if (pretrained and weights is None) else None
+    cfg = {"sample_in_inv_depth_space": False, "num_sampling_steps": 192}
+    model = build_model_with_cfg(
+        model_cls=MVSNet,
+        cfg=cfg,
+        weights=pretrained_weights,
         train=train,
         num_gpus=num_gpus,
     )

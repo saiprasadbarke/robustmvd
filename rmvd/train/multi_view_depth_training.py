@@ -105,7 +105,7 @@ class MultiViewDepthTraining:
         self.inputs = list(set(inputs + ["images"])) if inputs is not None else ["images", "intrinsics", "poses"]
         
         batch_augmentations = [] if batch_augmentations is None else batch_augmentations
-        batch_augmentations = [batch_augmentations] if not isinstance(batch_augmentations, list) else batch_augmentations
+        batch_augmentations = batch_augmentations if isinstance(batch_augmentations, list) else [batch_augmentations]
         self.batch_augmentations = []
         self._init_batch_augmentations(batch_augmentations)
         

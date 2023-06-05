@@ -146,8 +146,10 @@ def build_model_with_cfg(
         if preprocess_weights_fct is not None:
             state_dict = preprocess_weights_fct(state_dict)
 
-        model.load_state_dict(state_dict, strict=True)
-
+        state_dict = state_dict["model_state_dict"]
+        state_dict_new = {key.replace("module.", ""): value for key, value in state_dict.items()} 
+        model.load_state_dict(state_dict_new, strict=True)
+        #model.load_state_dict(state_dict, strict=True)
     if train:
         model.train()
     else:

@@ -1,6 +1,6 @@
 from .robust_mvd import robust_mvd, robust_mvd_5M
 from .vis_mvsnet import vis_mvsnet
-from .mvsnet import mvsnet
+from .mvsnet import mvsnet_train, mvsnet_dtu_test, mvsnet_bmvs_test
 from .cvp_mvsnet import cvp_mvsnet
 from .wrappers.monodepth2 import (
     monodepth2_mono_stereo_1024x320_wrapped,
