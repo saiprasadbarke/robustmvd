@@ -43,9 +43,11 @@ class PatchmatchNet_Wrapped(nn.Module):
             patchmatch_iteration=patchmatch_iteration,
             patchmatch_num_sample=patchmatch_num_sample,
             propagate_neighbors=propagate_neighbors,
-            evaluate_neighbors=evaluate_neighbors
+            evaluate_neighbors=evaluate_neighbors,
         )
-        state_dict = torch.load(osp.join(repo_path, "checkpoints/params_000007.ckpt"))["model"]
+        state_dict = torch.load(osp.join(repo_path, "checkpoints/params_000007.ckpt"))[
+            "model"
+        ]
         fixed_weights = {}
         for k, v in state_dict.items():
             fixed_weights[k[7:]] = v
@@ -54,18 +56,29 @@ class PatchmatchNet_Wrapped(nn.Module):
         self.num_sampling_steps = num_sampling_steps
 
     def input_adapter(
-        self, images, keyview_idx, poses=None, intrinsics=None, depth_range=None  # TODO: does it make sense that poses etc are set to None?
+        self,
+        images,
+        keyview_idx,
+        poses=None,
+        intrinsics=None,
+        depth_range=None,  # TODO: does it make sense that poses etc are set to None?
     ):
         device = get_torch_model_device(self)
 
         # normalize images
         images = [image / 255.0 for image in images]
 
-        depth_range = [np.array([0.2], dtype=np.float32), np.array([100], dtype=np.float32)] if depth_range is None else depth_range
+        depth_range = (
+            [np.array([0.2], dtype=np.float32), np.array([100], dtype=np.float32)]
+            if depth_range is None
+            else depth_range
+        )
         min_depth, max_depth = depth_range
 
         images, keyview_idx, poses, intrinsics, min_depth, max_depth = to_torch(
-            (images, keyview_idx, poses, intrinsics, min_depth, max_depth), device=device)
+            (images, keyview_idx, poses, intrinsics, min_depth, max_depth),
+            device=device,
+        )
 
         # TODO: check min_depth, max_depth dtype with given or default depth range
 
@@ -79,7 +92,9 @@ class PatchmatchNet_Wrapped(nn.Module):
         }
         return sample
 
-    def forward(self, images,  poses, intrinsics, keyview_idx, min_depth, max_depth, **_):
+    def forward(
+        self, images, poses, intrinsics, keyview_idx, min_depth, max_depth, **_
+    ):
         image_key = select_by_index(images, keyview_idx)
         images_source = exclude_index(images, keyview_idx)
         images = [image_key] + images_source
@@ -94,7 +109,9 @@ class PatchmatchNet_Wrapped(nn.Module):
         poses = [pose_key] + poses_source
         poses = torch.stack(poses, dim=1)  # N, NV, 4, 4
 
-        pred_depth, pred_depth_confidence, _ = self.model.forward(images, intrinsics, poses, min_depth, max_depth)
+        pred_depth, pred_depth_confidence, _ = self.model.forward(
+            images, intrinsics, poses, min_depth, max_depth
+        )
         # N, 1, H, W and N, H, W
         pred_depth_confidence = pred_depth_confidence.unsqueeze(1)
         pred_depth_uncertainty = 1 - pred_depth_confidence

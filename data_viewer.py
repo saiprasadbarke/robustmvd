@@ -21,10 +21,19 @@ def data_viewer(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('data', help=f"Data to be viewed. Can either be a path to evaluation outputs, or a dataset"
-                                     f"name. Available dataset names are: {', '.join(list_datasets())}")
-    parser.add_argument('--layout', help=f"Data viewer layout. If not specified, the default layout is used.")
-    parser.add_argument('--augmentations', nargs='*',
-                        help=f"Data augmentations. Options are: {', '.join(list_augmentations())}")
+    parser.add_argument(
+        "data",
+        help=f"Data to be viewed. Can either be a path to evaluation outputs, or a dataset"
+        f"name. Available dataset names are: {', '.join(list_datasets())}",
+    )
+    parser.add_argument(
+        "--layout",
+        help="Data viewer layout. If not specified, the default layout is used.",
+    )
+    parser.add_argument(
+        "--augmentations",
+        nargs="*",
+        help=f"Data augmentations. Options are: {', '.join(list_augmentations())}",
+    )
     args = parser.parse_args()
     data_viewer(args)

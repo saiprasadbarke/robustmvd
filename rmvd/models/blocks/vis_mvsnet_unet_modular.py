@@ -77,7 +77,8 @@ def _make_layer(inplanes, block, planes, blocks, stride=1, dim=2):
     planes: The number of output channels for the blocks.
     blocks: The number of blocks (layers) to be created in the sequence.
     stride (optional): The stride value for the first block's convolutional layer, default is 1.
-    dim (optional): Dimension of the convolution operation, either 2 for 2D convolutions or 3 for 3D convolutions, default is 2."""
+    dim (optional): Dimension of the convolution operation, either 2 for 2D convolutions or 3 for 3D convolutions, default is 2.
+    """
     # The downsample variable is initialized to None. It will be used to store the downsample layer (if needed) to match the output dimensions of the residual path in the residual blocks.
     downsample = None
     # The conv_fn variable stores the appropriate convolution function based on the specified dimensionality (dim). If dim is 2, it uses nn.Conv2d; if dim is 3, it uses nn.Conv3d.

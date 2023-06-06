@@ -25,22 +25,20 @@ class TanksAndTemplesDepth:
     def load(self, root):
         path = osp.join(root, self.path)
         depth = np.load(path)["arr_0"]
-        depth = np.nan_to_num(depth, posinf=0., neginf=0., nan=0.)
+        depth = np.nan_to_num(depth, posinf=0.0, neginf=0.0, nan=0.0)
         depth = np.expand_dims(depth, 0)  # 1HW
         return depth
 
 
 class TanksAndTemplesSample(Sample):
-
     def __init__(self, name, base):
         self.name = name
         self.base = base
         self.data = {}
 
     def load(self, root):
-
         base = osp.join(root, self.base)
-        out_dict = {'_base': base, '_name': self.name}
+        out_dict = {"_base": base, "_name": self.name}
 
         for key, val in self.data.items():
             if not isinstance(val, list):
@@ -49,17 +47,19 @@ class TanksAndTemplesSample(Sample):
                 else:
                     out_dict[key] = val
             else:
-                out_dict[key] = [ele if isinstance(ele, np.ndarray) else ele.load(base) for ele in val]
+                out_dict[key] = [
+                    ele if isinstance(ele, np.ndarray) else ele.load(base)
+                    for ele in val
+                ]
 
         return out_dict
 
 
 @register_default_dataset
 class TanksAndTemplesTrainRobustMVD(Dataset):
-
-    base_dataset = 'tanks_and_temples'
-    split = 'robustmvd'
-    dataset_type = 'mvd'
+    base_dataset = "tanks_and_temples"
+    split = "robustmvd"
+    dataset_type = "mvd"
 
     def __init__(self, root=None, layouts=None, **kwargs):
         root = root if root is not None else self._get_path("tanks_and_temples", "root")

@@ -1,4 +1,10 @@
-from torch.optim.lr_scheduler import _LRScheduler, CosineAnnealingLR, MultiStepLR, ReduceLROnPlateau, LambdaLR
+from torch.optim.lr_scheduler import (
+    _LRScheduler,
+    CosineAnnealingLR,
+    MultiStepLR,
+    ReduceLROnPlateau,
+    LambdaLR,
+)
 from rmvd.optim.registry import register_scheduler
 
 
@@ -76,28 +82,31 @@ def mvsnet_scheduler(optimizer):
     decay_step = None
     use_amp = None
     decay_gamma = None
-    lr_scheduler = 'steplr'
+    lr_scheduler = "steplr"
     num_epochs = 20
     poly_exp = None
     warmup_multiplier = None
     warmup_epochs = None
-    optimizer = 'adam'
-
+    optimizer = "adam"
 
     eps = 1e-7 if use_amp else 1e-8
-    if lr_scheduler == 'steplr':
-        scheduler = MultiStepLR(optimizer, milestones=decay_step, 
-                                gamma=decay_gamma)
-    elif lr_scheduler == 'cosine':
+    if lr_scheduler == "steplr":
+        scheduler = MultiStepLR(optimizer, milestones=decay_step, gamma=decay_gamma)
+    elif lr_scheduler == "cosine":
         scheduler = CosineAnnealingLR(optimizer, T_max=num_epochs, eta_min=eps)
-    elif lr_scheduler == 'poly':
-        scheduler = LambdaLR(optimizer, 
-                             lambda epoch: (1-epoch/num_epochs)**poly_exp)
+    elif lr_scheduler == "poly":
+        scheduler = LambdaLR(
+            optimizer, lambda epoch: (1 - epoch / num_epochs) ** poly_exp
+        )
     else:
-        raise ValueError('scheduler not recognized!')
+        raise ValueError("scheduler not recognized!")
 
-    if warmup_epochs > 0 and optimizer not in ['radam', 'ranger']:
-        scheduler = GradualWarmupScheduler(optimizer, multiplier=warmup_multiplier, 
-                                           total_epoch=warmup_epochs, after_scheduler=scheduler)
+    if warmup_epochs > 0 and optimizer not in ["radam", "ranger"]:
+        scheduler = GradualWarmupScheduler(
+            optimizer,
+            multiplier=warmup_multiplier,
+            total_epoch=warmup_epochs,
+            after_scheduler=scheduler,
+        )
 
     return scheduler

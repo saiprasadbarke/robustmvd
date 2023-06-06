@@ -34,7 +34,8 @@ class ViewerControls(QWidget):
         self.initUI()
 
     def set_index(self, index):
-        if self._index == index: return
+        if self._index == index:
+            return
         self.__log.debug(f"goto index {index} (old = {self._index})")
         self._index = index
         self._slider.change_value(index)
@@ -54,7 +55,9 @@ class ViewerControls(QWidget):
                     cur_layout_idx = idx
 
             self._layout_nameDropdown.setCurrentIndex(cur_layout_idx)
-            self._layout_nameDropdown.currentIndexChanged.connect(self.current_layout_name_dropdown_changed)
+            self._layout_nameDropdown.currentIndexChanged.connect(
+                self.current_layout_name_dropdown_changed
+            )
 
         self._slider = IntSlider((0, 0))
         self._slider.value_changed.connect(self.set_index)
@@ -133,7 +136,8 @@ class ViewerControls(QWidget):
 
     def current_layout_name_dropdown_changed(self):
         layout_name = self._layout_nameDropdown.currentText()
-        if self._model.get_cur_layout_name() == layout_name: return
+        if self._model.get_cur_layout_name() == layout_name:
+            return
         self._model.set_layout(layout_name)
         self.layout_changed.emit(layout_name)
         self.__log.debug(f"layout name changed to {layout_name}")

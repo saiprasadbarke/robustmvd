@@ -16,8 +16,13 @@ def register_dataset(dataset_cls):
     base_dataset = dataset_cls.base_dataset.lower()
     dataset_type = dataset_cls.dataset_type.lower()
     split = dataset_cls.split.lower()
-    assert (base_dataset, dataset_type, split) not in _datasets, \
+    assert (
+        base_dataset,
+        dataset_type,
+        split,
+    ) not in _datasets, (
         f"Dataset {str((base_dataset, dataset_type, split))} is already registered."
+    )
     _datasets[(base_dataset, dataset_type, split)] = dataset_cls
     return dataset_cls
 
@@ -29,13 +34,23 @@ def register_default_dataset(dataset_cls):
     base_dataset = dataset_cls.base_dataset.lower()
     dataset_type = dataset_cls.dataset_type.lower()
     split = dataset_cls.split.lower()
-    assert (base_dataset, dataset_type) not in _default_splits, \
+    assert (
+        base_dataset,
+        dataset_type,
+    ) not in _default_splits, (
         f"Dataset {str((base_dataset, dataset_type))} has already a default split."
+    )
     _default_splits[(base_dataset, dataset_type)] = split
     return dataset_cls
 
 
-def list_datasets(base_dataset=None, dataset_type=None, split=None, no_dataset_type=False, no_split=False):
+def list_datasets(
+    base_dataset=None,
+    dataset_type=None,
+    split=None,
+    no_dataset_type=False,
+    no_split=False,
+):
     """Get list of available datasets.
 
     Args:
@@ -45,8 +60,13 @@ def list_datasets(base_dataset=None, dataset_type=None, split=None, no_dataset_t
         no_dataset_type: do not include dataset type in the dataset name.
         no_split: do not include split in the dataset name.
     """
-    datasets = _filter_datasets(base_dataset=base_dataset, dataset_type=dataset_type, split=split)
-    datasets = [_build_dataset_name(*k, no_dataset_type=no_dataset_type, no_split=no_split) for k in datasets]
+    datasets = _filter_datasets(
+        base_dataset=base_dataset, dataset_type=dataset_type, split=split
+    )
+    datasets = [
+        _build_dataset_name(*k, no_dataset_type=no_dataset_type, no_split=no_split)
+        for k in datasets
+    ]
     return list(sorted(datasets))
 
 
@@ -100,26 +120,35 @@ def _split_dataset_name(dataset_name, dataset_type=None, split=None):
 
     if s[-1] in list_dataset_types():
         if dataset_type is not None:
-            assert s[-1] == dataset_type, "The given dataset name conflicts with the given dataset type."
+            assert (
+                s[-1] == dataset_type
+            ), "The given dataset name conflicts with the given dataset type."
         else:
             dataset_type = s[-1]
         s = s[:-1]
 
-    assert dataset_type is not None, \
-        f"Dataset type must be provided. Available types are: {','.join(list_dataset_types())}"
+    assert (
+        dataset_type is not None
+    ), f"Dataset type must be provided. Available types are: {','.join(list_dataset_types())}"
 
-    if split is None and dataset_type is not None and ('.'.join(s), dataset_type) in _default_splits:
-        split = _default_splits[('.'.join(s), dataset_type)]
+    if (
+        split is None
+        and dataset_type is not None
+        and (".".join(s), dataset_type) in _default_splits
+    ):
+        split = _default_splits[(".".join(s), dataset_type)]
     if split is not None and split in s:
         s.remove(split)
     if split is None:
         s, split = s[:-1], s[-1]
 
-    base_dataset = '.'.join(s)
+    base_dataset = ".".join(s)
     return base_dataset, dataset_type, split
 
 
-def _build_dataset_name(dataset_name, dataset_type=None, split=None, no_dataset_type=False, no_split=False):
+def _build_dataset_name(
+    dataset_name, dataset_type=None, split=None, no_dataset_type=False, no_split=False
+):
     dataset_name = dataset_name.lower()
     dataset_type = dataset_type.lower() if dataset_type is not None else None
     split = split.lower() if split is not None else None
@@ -128,28 +157,34 @@ def _build_dataset_name(dataset_name, dataset_type=None, split=None, no_dataset_
 
     if s[-1] in list_dataset_types():
         if dataset_type is not None:
-            assert s[-1] == dataset_type, "The given dataset name conflicts with the given dataset type."
+            assert (
+                s[-1] == dataset_type
+            ), "The given dataset name conflicts with the given dataset type."
         else:
             dataset_type = s[-1]
         s = s[:-1]
 
-    if split is None and dataset_type is not None and ('.'.join(s), dataset_type) in _default_splits:
-        split = _default_splits[('.'.join(s), dataset_type)]
+    if (
+        split is None
+        and dataset_type is not None
+        and (".".join(s), dataset_type) in _default_splits
+    ):
+        split = _default_splits[(".".join(s), dataset_type)]
     if split is not None and split in s:
         s.remove(split)
 
     s = s + [split] if (split is not None and not no_split) else s
     s = s + [dataset_type] if (dataset_type is not None and not no_dataset_type) else s
-    dataset_name = '.'.join(s)
+    dataset_name = ".".join(s)
     return dataset_name
 
 
 def has_dataset(dataset_name, dataset_type=None, split=None):
     """Check if dataset is registered."""
     try:
-        base_dataset, dataset_type, split = _split_dataset_name(dataset_name=dataset_name,
-                                                                dataset_type=dataset_type,
-                                                                split=split)
+        base_dataset, dataset_type, split = _split_dataset_name(
+            dataset_name=dataset_name, dataset_type=dataset_type, split=split
+        )
     except AssertionError:
         return False
 
@@ -158,10 +193,10 @@ def has_dataset(dataset_name, dataset_type=None, split=None):
 
 def get_dataset(dataset_name, dataset_type=None, split=None):
     """Get dataset entrypoint by name."""
-    base_dataset, dataset_type, split = _split_dataset_name(dataset_name=dataset_name,
-                                                            dataset_type=dataset_type,
-                                                            split=split)
-    
+    base_dataset, dataset_type, split = _split_dataset_name(
+        dataset_name=dataset_name, dataset_type=dataset_type, split=split
+    )
+
     # TODO: add assert that dataset is registered
 
     return _datasets[(base_dataset, dataset_type, split)]
@@ -186,7 +221,9 @@ def has_augmentation(augmentation_name):
 
 def create_augmentation(augmentation_name, **kwargs):
     """Get augmentation by name."""
-    assert has_augmentation(augmentation_name), f'The requested augmentation function "{augmentation_name}" does not exist. Available augmentation functions are: {" ".join(list_augmentations())}'
+    assert has_augmentation(
+        augmentation_name
+    ), f'The requested augmentation function "{augmentation_name}" does not exist. Available augmentation functions are: {" ".join(list_augmentations())}'
     return _aug_fcts[augmentation_name](**kwargs)
 
 
@@ -209,5 +246,7 @@ def has_batch_augmentation(batch_augmentation_name):
 
 def create_batch_augmentation(batch_augmentation_name, **kwargs):
     """Get batch augmentation by name."""
-    assert has_batch_augmentation(batch_augmentation_name), f'The requested batch augmentation function "{batch_augmentation_name}" does not exist. Available batch augmentation functions are: {" ".join(list_batch_augmentations())}'
+    assert has_batch_augmentation(
+        batch_augmentation_name
+    ), f'The requested batch augmentation function "{batch_augmentation_name}" does not exist. Available batch augmentation functions are: {" ".join(list_batch_augmentations())}'
     return _batch_aug_fcts[batch_augmentation_name](**kwargs)

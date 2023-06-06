@@ -5,7 +5,9 @@ from .registry import get_model
 from .helpers import add_run_function
 
 
-def create_model(name, pretrained=True, weights=None, train=False, num_gpus=1, **kwargs):
+def create_model(
+    name, pretrained=True, weights=None, train=False, num_gpus=1, **kwargs
+):
     """Creates a model.
 
     Args:
@@ -19,7 +21,9 @@ def create_model(name, pretrained=True, weights=None, train=False, num_gpus=1, *
         **kwargs: Additional arguments to pass to the model.
     """
     model_entrypoint = get_model(name=name)
-    model = model_entrypoint(pretrained=pretrained, weights=weights, train=train, num_gpus=num_gpus, **kwargs)
+    model = model_entrypoint(
+        pretrained=pretrained, weights=weights, train=train, num_gpus=num_gpus, **kwargs
+    )
     add_run_function(model)
     model.name = name
     return model
@@ -41,13 +45,17 @@ def prepare_custom_model(model, train=False, num_gpus=1):
     else:
         model.eval()
 
-    assert not isinstance(model, nn.DataParallel), 'Model must not be wrapped in nn.DataParallel before ' \
-                                                   'prepare_custom_model is called.'
+    assert not isinstance(model, nn.DataParallel), (
+        "Model must not be wrapped in nn.DataParallel before "
+        "prepare_custom_model is called."
+    )
 
     if num_gpus == 1:
         model = model.cuda()
     elif num_gpus > 1:
-        parallel_model = torch.nn.DataParallel(model, device_ids=list(range(num_gpus))).cuda()
+        parallel_model = torch.nn.DataParallel(
+            model, device_ids=list(range(num_gpus))
+        ).cuda()
         parallel_model.input_adapter = model.input_adapter
         parallel_model.output_adapter = model.output_adapter
         model = parallel_model

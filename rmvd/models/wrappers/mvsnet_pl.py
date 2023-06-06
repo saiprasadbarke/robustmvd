@@ -8,7 +8,14 @@ import numpy as np
 
 from ..registry import register_model
 from ..helpers import build_model_with_cfg
-from rmvd.utils import get_path, get_torch_model_device, to_numpy, to_torch, select_by_index, exclude_index
+from rmvd.utils import (
+    get_path,
+    get_torch_model_device,
+    to_numpy,
+    to_torch,
+    select_by_index,
+    exclude_index,
+)
 from rmvd.data.transforms import ResizeInputs
 
 
@@ -54,9 +61,11 @@ class MVSNet_pl_Wrapped(nn.Module):
             math.ceil(orig_wd / 64.0) * 64.0
         )
         if (orig_ht != ht) or (orig_wd != wd):
-            resized = ResizeInputs(size=(ht, wd))({'images': images, 'intrinsics': intrinsics})
-            images = resized['images']
-            intrinsics = resized['intrinsics']
+            resized = ResizeInputs(size=(ht, wd))(
+                {"images": images, "intrinsics": intrinsics}
+            )
+            images = resized["images"]
+            intrinsics = resized["intrinsics"]
 
         for idx, image_batch in enumerate(images):
             tmp_images = []
@@ -74,7 +83,6 @@ class MVSNet_pl_Wrapped(nn.Module):
             for intrinsic, pose, cur_keyview_idx in zip(
                 intrinsic_batch, pose_batch, keyview_idx
             ):
-
                 scale_arr = np.array([[0.25] * 3, [0.25] * 3, [1.0] * 3])  # 3, 3
                 intrinsic = (
                     intrinsic * scale_arr
@@ -139,7 +147,6 @@ class MVSNet_pl_Wrapped(nn.Module):
         return sample
 
     def forward(self, images, proj_mats, depth_samples, keyview_idx, **_):
-
         # TODO: move this to input_adapter
         image_key = select_by_index(images, keyview_idx)
         images_source = exclude_index(images, keyview_idx)

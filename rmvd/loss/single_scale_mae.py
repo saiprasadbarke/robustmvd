@@ -8,8 +8,15 @@ from rmvd.utils import logging
 
 
 class SingleScaleMAE(nn.Module):
-    def __init__(self, model, weight_decay=1e-4, gt_interpolation="nearest", modality="invdepth", weight_by_sampling_interval=False, verbose=True):
-
+    def __init__(
+        self,
+        model,
+        weight_decay=1e-4,
+        gt_interpolation="nearest",
+        modality="invdepth",
+        weight_by_sampling_interval=False,
+        verbose=True,
+    ):
         super().__init__()
 
         self.verbose = verbose
@@ -40,12 +47,18 @@ class SingleScaleMAE(nn.Module):
     def get_regularization_parameters(self, model):
         reg_params = []
         for name, param in model.named_parameters():
-            if "pred" not in name and not name.endswith("bias") and not name.endswith(
-                    "bn.weight") and param.requires_grad:
+            if (
+                "pred" not in name
+                and not name.endswith("bias")
+                and not name.endswith("bn.weight")
+                and param.requires_grad
+            ):
                 reg_params.append((name, param))
 
         if self.verbose:
-            logging.info(f"\tApplying regularization loss with weight decay {self.weight_decay} on:")
+            logging.info(
+                f"\tApplying regularization loss with weight decay {self.weight_decay} on:"
+            )
             for i, val in enumerate(reg_params):
                 name, param = val
                 logging.info(f"\t\t#{i} {name}: {param.shape} ({param.numel()})")
@@ -53,7 +66,6 @@ class SingleScaleMAE(nn.Module):
         return reg_params
 
     def forward(self, sample_inputs, sample_gt, pred, aux, iteration):
-
         sub_losses = {}
         pointwise_losses = {}
 
@@ -61,13 +73,17 @@ class SingleScaleMAE(nn.Module):
         gt_mask = gt > 0
 
         pred = aux[self.modality]
-        
+
         if self.weight_by_sampling_interval:
             sampling_invdepths = aux["sampling_invdepths"]
             steps = sampling_invdepths.shape[1]
-            max_depth = 1. / sampling_invdepths[:, 0:1, ...]  # shape [N, 1, H, W] or [N, 1, 1, 1]
-            min_depth = 1. / sampling_invdepths[:, -1:, ...]  # shape [N, 1, H, W] or [N, 1, 1, 1]
-            interval = (max_depth - min_depth) / (steps-1)
+            max_depth = (
+                1.0 / sampling_invdepths[:, 0:1, ...]
+            )  # shape [N, 1, H, W] or [N, 1, 1, 1]
+            min_depth = (
+                1.0 / sampling_invdepths[:, -1:, ...]
+            )  # shape [N, 1, H, W] or [N, 1, 1, 1]
+            interval = (max_depth - min_depth) / (steps - 1)
             loss_weight = 1 / interval
         else:
             loss_weight = 1
@@ -75,11 +91,20 @@ class SingleScaleMAE(nn.Module):
         total_reg_loss = 0
 
         with torch.no_grad():
-            gt_resampled = F.interpolate(gt, size=pred.shape[-2:], mode=self.gt_interpolation)
-            gt_mask_resampled = F.interpolate(gt_mask.float(), size=pred.shape[-2:], mode="nearest") == 1.0
+            gt_resampled = F.interpolate(
+                gt, size=pred.shape[-2:], mode=self.gt_interpolation
+            )
+            gt_mask_resampled = (
+                F.interpolate(gt_mask.float(), size=pred.shape[-2:], mode="nearest")
+                == 1.0
+            )
 
-        mae_loss = mae(gt=gt_resampled, pred=pred, mask=gt_mask_resampled, weight=loss_weight)
-        pointwise_ae_loss = pointwise_ae(gt=gt_resampled, pred=pred, mask=gt_mask_resampled, weight=loss_weight)
+        mae_loss = mae(
+            gt=gt_resampled, pred=pred, mask=gt_mask_resampled, weight=loss_weight
+        )
+        pointwise_ae_loss = pointwise_ae(
+            gt=gt_resampled, pred=pred, mask=gt_mask_resampled, weight=loss_weight
+        )
 
         for _, param in self.reg_params:
             reg_loss = torch.sum(torch.mul(param, param)) / 2.0
@@ -96,4 +121,10 @@ class SingleScaleMAE(nn.Module):
 
 @register_loss
 def mvsnet_loss(**kwargs):
-    return SingleScaleMAE(weight_decay=0., gt_interpolation="bilinear", modality="depth", weight_by_sampling_interval=True, **kwargs)
+    return SingleScaleMAE(
+        weight_decay=0.0,
+        gt_interpolation="bilinear",
+        modality="depth",
+        weight_by_sampling_interval=True,
+        **kwargs,
+    )

@@ -1,4 +1,4 @@
-#torch.backends.cudnn.benchmark = True  # type: ignore
+# torch.backends.cudnn.benchmark = True  # type: ignore
 
 
 class Training:

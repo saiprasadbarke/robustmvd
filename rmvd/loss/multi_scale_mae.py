@@ -8,8 +8,14 @@ from rmvd.utils import logging
 
 
 class MultiScaleMAE(nn.Module):
-    def __init__(self, model, weight_decay=1e-4, gt_interpolation="nearest", modality="invdepth", verbose=True):
-
+    def __init__(
+        self,
+        model,
+        weight_decay=1e-4,
+        gt_interpolation="nearest",
+        modality="invdepth",
+        verbose=True,
+    ):
         super().__init__()
 
         self.verbose = verbose
@@ -25,7 +31,9 @@ class MultiScaleMAE(nn.Module):
 
         self.modality = modality
 
-        self.reg_params = self.get_regularization_parameters(model)  # TODO: I think there is a better way in pytorch to do this
+        self.reg_params = self.get_regularization_parameters(
+            model
+        )  # TODO: I think there is a better way in pytorch to do this
 
         if self.verbose:
             logging.info(f"\tWeight decay: {self.weight_decay}")
@@ -43,12 +51,18 @@ class MultiScaleMAE(nn.Module):
     def get_regularization_parameters(self, model):
         reg_params = []
         for name, param in model.named_parameters():
-            if "pred" not in name and not name.endswith("bias") and not name.endswith(
-                    "bn.weight") and param.requires_grad:
+            if (
+                "pred" not in name
+                and not name.endswith("bias")
+                and not name.endswith("bn.weight")
+                and param.requires_grad
+            ):
                 reg_params.append((name, param))
 
         if self.verbose:
-            logging.info(f"\tApplying regularization loss with weight decay {self.weight_decay} on:")
+            logging.info(
+                f"\tApplying regularization loss with weight decay {self.weight_decay} on:"
+            )
             for i, val in enumerate(reg_params):
                 name, param = val
                 logging.info(f"\t\t#{i} {name}: {param.shape} ({param.numel()})")
@@ -56,7 +70,6 @@ class MultiScaleMAE(nn.Module):
         return reg_params
 
     def forward(self, sample_inputs, sample_gt, pred, aux, iteration):
-
         sub_losses = {}
         pointwise_losses = {}
 
@@ -69,14 +82,27 @@ class MultiScaleMAE(nn.Module):
         total_reg_loss = 0
 
         for level, pred in enumerate(preds_all):
-
             with torch.no_grad():
-                gt_resampled = F.interpolate(gt, size=pred.shape[-2:], mode=self.gt_interpolation)
-                gt_mask_resampled = F.interpolate(gt_mask.float(), size=pred.shape[-2:], mode="nearest") == 1.0
+                gt_resampled = F.interpolate(
+                    gt, size=pred.shape[-2:], mode=self.gt_interpolation
+                )
+                gt_mask_resampled = (
+                    F.interpolate(gt_mask.float(), size=pred.shape[-2:], mode="nearest")
+                    == 1.0
+                )
 
-            loss = mae(gt=gt_resampled, pred=pred, mask=gt_mask_resampled, weight=self.loss_weights[level])
-            pointwise_loss = pointwise_ae(gt=gt_resampled, pred=pred, mask=gt_mask_resampled,
-                                            weight=self.loss_weights[level])
+            loss = mae(
+                gt=gt_resampled,
+                pred=pred,
+                mask=gt_mask_resampled,
+                weight=self.loss_weights[level],
+            )
+            pointwise_loss = pointwise_ae(
+                gt=gt_resampled,
+                pred=pred,
+                mask=gt_mask_resampled,
+                weight=self.loss_weights[level],
+            )
 
             sub_losses["02_mnll/level_%d" % level] = loss
             pointwise_losses["00_nll/level_%d" % level] = pointwise_loss
@@ -97,4 +123,6 @@ class MultiScaleMAE(nn.Module):
 
 @register_loss
 def supervised_monodepth2_loss(**kwargs):
-    return MultiScaleMAE(weight_decay=1e-4, gt_interpolation="nearest", modality="invdepth", **kwargs)
+    return MultiScaleMAE(
+        weight_decay=1e-4, gt_interpolation="nearest", modality="invdepth", **kwargs
+    )

@@ -24,23 +24,23 @@ class ETH3DDepth:
 
     def load(self, root):
         height, width = 4032, 6048
-        depth = np.fromfile(osp.join(root, self.path), dtype=np.float32).reshape(height, width)
-        depth = np.nan_to_num(depth, posinf=0., neginf=0., nan=0.)
+        depth = np.fromfile(osp.join(root, self.path), dtype=np.float32).reshape(
+            height, width
+        )
+        depth = np.nan_to_num(depth, posinf=0.0, neginf=0.0, nan=0.0)
         depth = np.expand_dims(depth, 0)  # 1HW
         return depth
 
 
 class ETH3DSample(Sample):
-
     def __init__(self, base, name):
         self.base = base
         self.name = name
         self.data = {}
 
     def load(self, root):
-
         base = osp.join(root, self.base)
-        out_dict = {'_base': base, '_name': self.name}
+        out_dict = {"_base": base, "_name": self.name}
 
         for key, val in self.data.items():
             if not isinstance(val, list):
@@ -49,17 +49,19 @@ class ETH3DSample(Sample):
                 else:
                     out_dict[key] = val
             else:
-                out_dict[key] = [ele if isinstance(ele, np.ndarray) else ele.load(base) for ele in val]
+                out_dict[key] = [
+                    ele if isinstance(ele, np.ndarray) else ele.load(base)
+                    for ele in val
+                ]
 
         return out_dict
 
 
 @register_default_dataset
 class ETH3DTrainRobustMVD(Dataset):
-
-    base_dataset = 'eth3d'
-    split = 'robustmvd'
-    dataset_type = 'mvd'
+    base_dataset = "eth3d"
+    split = "robustmvd"
+    dataset_type = "mvd"
 
     def __init__(self, root=None, layouts=None, **kwargs):
         root = root if root is not None else self._get_path("eth3d", "root")

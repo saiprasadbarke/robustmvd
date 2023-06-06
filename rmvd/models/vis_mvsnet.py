@@ -41,7 +41,7 @@ class VisMvsnet(ModelWrappers):
         self, images, poses, intrinsics, keyview_idx, depth_range, **_
     ):  # this is fixed
         # Extract the minimum and maximum depth from the depth_range input.
-        N = images[0].shape[0] # batch size
+        N = images[0].shape[0]  # batch size
         min_depth, max_depth = depth_range
         # Calculate the step size for depth sampling based on the min_depth, max_depth, and the number of sampling steps.
         step_size = (max_depth - min_depth) / self.num_sampling_steps

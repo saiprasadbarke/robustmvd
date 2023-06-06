@@ -192,7 +192,9 @@ def interpolate(image, coord):  # nchw, nhw2 => nchw
 
 
 # Used in SingleStage class in the build_cost_volume function
-def homography_warping(input, H):  # nchw, n33/nhw33 -> nchw   #TODO: How to unite all homography warping fucntions. This one is used in SingleStage class in the build_cost_volume function
+def homography_warping(
+    input, H
+):  # nchw, n33/nhw33 -> nchw   #TODO: How to unite all homography warping fucntions. This one is used in SingleStage class in the build_cost_volume function
     if len(H.size()) == 3:
         H = H.view(-1, 1, 1, 3, 3)
     with torch.no_grad():
@@ -238,7 +240,9 @@ def scale_camera(cam: Union[np.ndarray, torch.Tensor], scale: Union[Tuple, float
 
 
 #################### Utils for mvsnet ####################
-def homo_warp(src_feat, src_proj, ref_proj_inv, depth_values): #TODO: How to unite all homography warping fucntions. 
+def homo_warp(
+    src_feat, src_proj, ref_proj_inv, depth_values
+):  # TODO: How to unite all homography warping fucntions.
     # src_feat: (B, C, H, W)
     # src_proj: (B, 4, 4)
     # ref_proj_inv: (B, 4, 4)
@@ -287,7 +291,9 @@ def homo_warp(src_feat, src_proj, ref_proj_inv, depth_values): #TODO: How to uni
     return warped_src_feat
 
 
-def depth_regression(p, depth_values): # This is reused inthe implementation for cvp_mvsnet
+def depth_regression(
+    p, depth_values
+):  # This is reused inthe implementation for cvp_mvsnet
     # p: probability volume [B, D, H, W]
     # depth_values: discrete depth values [B, D]
     # print(f"Min p: {p.min()}, Max p: {p.max()}")

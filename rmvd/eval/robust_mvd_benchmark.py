@@ -53,23 +53,26 @@ class RobustMultiViewDepthBenchmark:
             the evaluation. Defaults to True.
         verbose: Print evaluation details.
     """
-    def __init__(self,
-                 out_dir: Optional[str] = None,
-                 inputs: Sequence[str] = None,
-                 alignment: Optional[str] = None,
-                 max_source_views: Optional[int] = None,
-                 min_source_views: int = 1,
-                 view_ordering: str = "quasi-optimal",
-                 eval_uncertainty: bool = True,
-                 sparse_pred: bool = False,
-                 verbose: bool = True,
-                 **_
-                 ):
 
+    def __init__(
+        self,
+        out_dir: Optional[str] = None,
+        inputs: Sequence[str] = None,
+        alignment: Optional[str] = None,
+        max_source_views: Optional[int] = None,
+        min_source_views: int = 1,
+        view_ordering: str = "quasi-optimal",
+        eval_uncertainty: bool = True,
+        sparse_pred: bool = False,
+        verbose: bool = True,
+        **_,
+    ):
         self.verbose = verbose
 
         self.out_dir = out_dir
-        self.log_file_path = osp.join(self.out_dir, "log.txt") if self.out_dir is not None else None
+        self.log_file_path = (
+            osp.join(self.out_dir, "log.txt") if self.out_dir is not None else None
+        )
         if self.out_dir is not None:
             os.makedirs(self.out_dir, exist_ok=True)
             logging.add_log_file(self.log_file_path, flush_line=True)
@@ -77,11 +80,21 @@ class RobustMultiViewDepthBenchmark:
         if self.verbose:
             logging.info(f"Initializing evaluation {self.name}.")
 
-        self.inputs = list(set(inputs + ["images"])) if inputs is not None else ["images"]
+        self.inputs = (
+            list(set(inputs + ["images"])) if inputs is not None else ["images"]
+        )
         self.alignment = alignment
         self.max_source_views = max_source_views
-        self.min_source_views = min_source_views if max_source_views is None else min(min_source_views, max_source_views)
-        self.view_ordering = view_ordering if (self.max_source_views is None) or (self.max_source_views > 0) else None
+        self.min_source_views = (
+            min_source_views
+            if max_source_views is None
+            else min(min_source_views, max_source_views)
+        )
+        self.view_ordering = (
+            view_ordering
+            if (self.max_source_views is None) or (self.max_source_views > 0)
+            else None
+        )
         self.eval_uncertainty = eval_uncertainty
         self.sparse_pred = sparse_pred
 
@@ -89,7 +102,7 @@ class RobustMultiViewDepthBenchmark:
             logging.info(self)
             logging.info(f"Finished initializing evaluation {self.name}.")
             logging.info()
-            
+
     def __del__(self):
         if self.log_file_path is not None:
             logging.remove_log_file(self.log_file_path)
@@ -113,18 +126,20 @@ class RobustMultiViewDepthBenchmark:
         return ret
 
     @torch.no_grad()
-    def __call__(self,
-                 model,
-                 eth3d_size: Optional[Tuple[int, int]] = (1024, 1536),
-                 kitti_size: Optional[Tuple[int, int]] = None,
-                 dtu_size: Optional[Tuple[int, int]] = None,
-                 scannet_size: Optional[Tuple[int, int]] = None,
-                 tanks_and_temples_size: Optional[Tuple[int, int]] = None,
-                 samples: Optional[Union[int, Sequence[int]]] = None,
-                 qualitatives: Union[int, Sequence[int]] = 2,
-                 eval_name: Optional[str] = None,
-                 finished_iterations: Optional[int] = None,
-                **_):
+    def __call__(
+        self,
+        model,
+        eth3d_size: Optional[Tuple[int, int]] = (1024, 1536),
+        kitti_size: Optional[Tuple[int, int]] = None,
+        dtu_size: Optional[Tuple[int, int]] = None,
+        scannet_size: Optional[Tuple[int, int]] = None,
+        tanks_and_temples_size: Optional[Tuple[int, int]] = None,
+        samples: Optional[Union[int, Sequence[int]]] = None,
+        qualitatives: Union[int, Sequence[int]] = 2,
+        eval_name: Optional[str] = None,
+        finished_iterations: Optional[int] = None,
+        **_,
+    ):
         """Run Robust Multi-view Depth Benchmark evaluation for a model.
 
         Args:
@@ -150,11 +165,13 @@ class RobustMultiViewDepthBenchmark:
             Results of the evaluation.
         """
 
-        datasets = [("kitti.robustmvd.mvd", kitti_size),
-                    ("dtu.robustmvd.mvd", dtu_size),
-                    ("scannet.robustmvd.mvd", scannet_size),
-                    ("tanks_and_temples.robustmvd.mvd", tanks_and_temples_size),
-                    ("eth3d.robustmvd.mvd", eth3d_size),]
+        datasets = [
+            ("kitti.robustmvd.mvd", kitti_size),
+            ("dtu.robustmvd.mvd", dtu_size),
+            ("scannet.robustmvd.mvd", scannet_size),
+            ("tanks_and_temples.robustmvd.mvd", tanks_and_temples_size),
+            ("eth3d.robustmvd.mvd", eth3d_size),
+        ]
 
         results = []
 
@@ -167,28 +184,49 @@ class RobustMultiViewDepthBenchmark:
             else:
                 out_dir = None
 
-            eval = MultiViewDepthEvaluation(out_dir=out_dir, inputs=self.inputs, alignment=self.alignment,
-                                            view_ordering=self.view_ordering, max_source_views=self.max_source_views,
-                                            min_source_views=self.min_source_views,
-                                            eval_uncertainty=self.eval_uncertainty, clip_pred_depth=True,
-                                            sparse_pred=self.sparse_pred, verbose=self.verbose)
+            eval = MultiViewDepthEvaluation(
+                out_dir=out_dir,
+                inputs=self.inputs,
+                alignment=self.alignment,
+                view_ordering=self.view_ordering,
+                max_source_views=self.max_source_views,
+                min_source_views=self.min_source_views,
+                eval_uncertainty=self.eval_uncertainty,
+                clip_pred_depth=True,
+                sparse_pred=self.sparse_pred,
+                verbose=self.verbose,
+            )
             # TODO: pass tqdm progress bar and set verbose to False
 
-            dataset = create_dataset(dataset_name_or_path=dataset_name, dataset_type="mvd", input_size=input_size)
-            result = eval(dataset=dataset, model=model, samples=samples, qualitatives=qualitatives, burn_in_samples=3,
-                          eval_name=eval_name, finished_iterations=finished_iterations)
+            dataset = create_dataset(
+                dataset_name_or_path=dataset_name,
+                dataset_type="mvd",
+                input_size=input_size,
+            )
+            result = eval(
+                dataset=dataset,
+                model=model,
+                samples=samples,
+                qualitatives=qualitatives,
+                burn_in_samples=3,
+                eval_name=eval_name,
+                finished_iterations=finished_iterations,
+            )
             result = prepend_level(result, "dataset", dataset_name, axis=1)
             results.append(result)
             logging.info()
-            del eval ; gc.collect()
+            del eval
+            gc.collect()
 
         results = pd.concat(results, axis=1)
         self._output_results(results, self.out_dir)
         return results
 
     def _output_results(self, results, out_dir):
-        num_source_view_results = results.drop('best', axis=1, level=1).mean()
-        results = results.loc[:, (slice(None), 'best')].droplevel(level=1, axis=1).mean()
+        num_source_view_results = results.drop("best", axis=1, level=1).mean()
+        results = (
+            results.loc[:, (slice(None), "best")].droplevel(level=1, axis=1).mean()
+        )
 
         if self.verbose:
             logging.info()
@@ -196,11 +234,14 @@ class RobustMultiViewDepthBenchmark:
             logging.info(results)
 
         if out_dir is not None:
-
             if self.verbose:
                 logging.info(f"Writing Robust MVD Benchmark results to {out_dir}.")
 
             results.to_csv(osp.join(out_dir, "results.csv"))
             results.to_pickle(osp.join(out_dir, "results.pickle"))
-            num_source_view_results.to_csv(osp.join(out_dir, "num_source_view_results.csv"))
-            num_source_view_results.to_pickle(osp.join(out_dir, "num_source_view_results.pickle"))
+            num_source_view_results.to_csv(
+                osp.join(out_dir, "num_source_view_results.csv")
+            )
+            num_source_view_results.to_pickle(
+                osp.join(out_dir, "num_source_view_results.pickle")
+            )

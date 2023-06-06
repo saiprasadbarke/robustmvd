@@ -32,21 +32,28 @@ class CVPMVSNet_Wrapped(nn.Module):
 
         from models.net import network
 
-        self.args = EasyDict({  # parameters are taken from original repository when executing eval.sh script
-            'nsrc': None,  # will be set in forward()
-            'nscale': 5,
-            'mode': 'test',
-        })
+        self.args = EasyDict(
+            {  # parameters are taken from original repository when executing eval.sh script
+                "nsrc": None,  # will be set in forward()
+                "nscale": 5,
+                "mode": "test",
+            }
+        )
         self.model = network(self.args)
-        state_dict = torch.load(osp.join(repo_path, "CVP_MVSNet/checkpoints/pretrained/model_000027.ckpt"))[
-            "model"
-        ]
+        state_dict = torch.load(
+            osp.join(repo_path, "CVP_MVSNet/checkpoints/pretrained/model_000027.ckpt")
+        )["model"]
         self.model.load_state_dict(state_dict, strict=False)
 
         self.num_sampling_steps = num_sampling_steps
 
     def input_adapter(
-        self, images, keyview_idx, poses=None, intrinsics=None, depth_range=None  # TODO: does it make sense that poses etc are set to None?
+        self,
+        images,
+        keyview_idx,
+        poses=None,
+        intrinsics=None,
+        depth_range=None,  # TODO: does it make sense that poses etc are set to None?
     ):
         device = get_torch_model_device(self)
 
@@ -64,11 +71,15 @@ class CVPMVSNet_Wrapped(nn.Module):
         # normalize images
         images = [image / 255.0 for image in images]
 
-        depth_range = [np.array([0.2]), np.array([100])] if depth_range is None else depth_range
+        depth_range = (
+            [np.array([0.2]), np.array([100])] if depth_range is None else depth_range
+        )
         min_depth, max_depth = depth_range
 
         images, keyview_idx, poses, intrinsics, min_depth, max_depth = to_torch(
-            (images, keyview_idx, poses, intrinsics, min_depth, max_depth), device=device)
+            (images, keyview_idx, poses, intrinsics, min_depth, max_depth),
+            device=device,
+        )
 
         # TODO: check min_depth, max_depth dtype with given or default depth range
 
@@ -82,7 +93,9 @@ class CVPMVSNet_Wrapped(nn.Module):
         }
         return sample
 
-    def forward(self, images,  poses, intrinsics, keyview_idx, min_depth, max_depth, **_):
+    def forward(
+        self, images, poses, intrinsics, keyview_idx, min_depth, max_depth, **_
+    ):
         image_key = select_by_index(images, keyview_idx)
         images_source = exclude_index(images, keyview_idx)
         self.args.nsrc = len(images_source)

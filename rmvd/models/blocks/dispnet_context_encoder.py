@@ -5,7 +5,6 @@ from .utils import conv
 
 class DispnetContextEncoder(nn.Module):
     def __init__(self):
-
         super().__init__()
         self.conv_redir = conv(256, 32, kernel_size=1, stride=1)
 

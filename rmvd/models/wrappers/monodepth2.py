@@ -6,7 +6,14 @@ import numpy as np
 
 from ..registry import register_model
 from ..helpers import build_model_with_cfg
-from rmvd.utils import get_path, get_torch_model_device, to_numpy, to_torch, select_by_index, exclude_index
+from rmvd.utils import (
+    get_path,
+    get_torch_model_device,
+    to_numpy,
+    to_torch,
+    select_by_index,
+    exclude_index,
+)
 from rmvd.data.transforms import ResizeInputs
 
 
@@ -63,8 +70,8 @@ class Monodepth2_Wrapped(nn.Module):
 
         orig_ht, orig_wd = images[0].shape[-2:]
         if (orig_ht != self.height) or (orig_wd != self.width):
-            resized = ResizeInputs(size=(self.height, self.width))({'images': [image]})
-            image = resized['images'][0]
+            resized = ResizeInputs(size=(self.height, self.width))({"images": [image]})
+            image = resized["images"][0]
 
         image = image / 255
         image = to_torch(image, device=device)

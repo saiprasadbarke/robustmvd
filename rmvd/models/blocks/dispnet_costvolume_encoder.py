@@ -24,7 +24,6 @@ class DispnetCostvolumeEncoder(nn.Module):
         self.conv6_1 = conv(C_curr, C_curr)
 
     def forward(self, corr, ctx):
-
         merged = torch.cat([ctx, corr], 1)
         conv3_1 = self.conv3_1(merged)
 
@@ -38,14 +37,14 @@ class DispnetCostvolumeEncoder(nn.Module):
         conv6_1 = self.conv6_1(conv6)
 
         all_enc = {
-            'merged': merged,
-            'conv3_1': conv3_1,
-            'conv4': conv4,
-            'conv4_1': conv4_1,
-            'conv5': conv5,
-            'conv5_1': conv5_1,
-            'conv6': conv6,
-            'conv6_1': conv6_1,
+            "merged": merged,
+            "conv3_1": conv3_1,
+            "conv4": conv4,
+            "conv4_1": conv4_1,
+            "conv5": conv5,
+            "conv5_1": conv5_1,
+            "conv6": conv6,
+            "conv6_1": conv6_1,
         }
 
         return all_enc, conv6_1

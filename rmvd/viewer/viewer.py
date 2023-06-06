@@ -59,8 +59,12 @@ class Viewer(QWidget):
 
     def _init_display_grid(self):
         self._grid = DisplayGrid()
-        for col, row, colspan, rowspan, display in self._model.get_displays(self._manager):
-            self._grid.set_widget(widget=display, col=col, row=row, colspan=colspan, rowspan=rowspan)
+        for col, row, colspan, rowspan, display in self._model.get_displays(
+            self._manager
+        ):
+            self._grid.set_widget(
+                widget=display, col=col, row=row, colspan=colspan, rowspan=rowspan
+            )
 
     def _reset_display_grid(self):
         for display in self._grid.displays()[::-1]:
@@ -70,7 +74,8 @@ class Viewer(QWidget):
         self._grid_scroll.setWidget(self._grid)
 
     def show_index(self, index, ignore_same=False):
-        if self._index == index and not ignore_same: return
+        if self._index == index and not ignore_same:
+            return
         self.__log.debug(f"show index {index} (old = {self._index})")
 
         self._index = index

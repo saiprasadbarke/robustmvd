@@ -21,32 +21,56 @@ def create_dataset(dataset_name_or_path, dataset_type=None, split=None, **kwargs
     Keyword Args:
         **kwargs: Arguments for the dataset.
     """
-    if has_dataset(dataset_name=dataset_name_or_path, dataset_type=dataset_type, split=split):
-        return _create_dataset_from_registry(dataset_name=dataset_name_or_path, dataset_type=dataset_type,
-                                             split=split, **kwargs)
+    if has_dataset(
+        dataset_name=dataset_name_or_path, dataset_type=dataset_type, split=split
+    ):
+        return _create_dataset_from_registry(
+            dataset_name=dataset_name_or_path,
+            dataset_type=dataset_type,
+            split=split,
+            **kwargs,
+        )
     else:
         if len(kwargs) > 0:
-            print(f"Warning: arguments {', '.join(kwargs.keys())} were ignored when creating the dataset {dataset_name_or_path}.")
+            print(
+                f"Warning: arguments {', '.join(kwargs.keys())} were ignored when creating the dataset {dataset_name_or_path}."
+            )
         return _create_dataset_from_cfg(path=dataset_name_or_path)
 
 
 def _create_dataset_from_registry(dataset_name, dataset_type, split, **kwargs):
-    dataset_cls = get_dataset(dataset_name=dataset_name, dataset_type=dataset_type, split=split)
+    dataset_cls = get_dataset(
+        dataset_name=dataset_name, dataset_type=dataset_type, split=split
+    )
     dataset = dataset_cls(**kwargs)
     return dataset
 
 
 def _create_dataset_from_cfg(path):
-    if not osp.split(path)[1] == 'dataset.cfg':
-        paths = glob(f'{path}/**/dataset.cfg', recursive=True)
-        assert len(paths) > 0, f"No dataset.cfg file found in {path} or its subdirectories."
+    if not osp.split(path)[1] == "dataset.cfg":
+        paths = glob(f"{path}/**/dataset.cfg", recursive=True)
+        assert (
+            len(paths) > 0
+        ), f"No dataset.cfg file found in {path} or its subdirectories."
         path = paths[0]
     dataset = Dataset.from_config(path)
     return dataset
 
 
-def create_dataloader(dataset_name, dataset_type=None, split=None, batch_size=1, shuffle=False, num_workers=0,
-                      collate_fn=None, pin_memory=False, drop_last=False, worker_init_fn=None, indices=None, **kwargs):
+def create_dataloader(
+    dataset_name,
+    dataset_type=None,
+    split=None,
+    batch_size=1,
+    shuffle=False,
+    num_workers=0,
+    collate_fn=None,
+    pin_memory=False,
+    drop_last=False,
+    worker_init_fn=None,
+    indices=None,
+    **kwargs,
+):
     """Create a dataloader.
 
     Args:
@@ -59,10 +83,20 @@ def create_dataloader(dataset_name, dataset_type=None, split=None, batch_size=1,
         **kwargs: Arguments for the dataset.
     """
     # TODO: take dataset_path_or_name as input and build on create_dataset function
-    dataset_cls = get_dataset(dataset_name=dataset_name, dataset_type=dataset_type, split=split)
-    dataloader = dataset_cls.init_as_loader(batch_size=batch_size, shuffle=shuffle, pin_memory=pin_memory,
-                                            num_workers=num_workers, collate_fn=collate_fn, drop_last=drop_last,
-                                            worker_init_fn=worker_init_fn, indices=indices, **kwargs)
+    dataset_cls = get_dataset(
+        dataset_name=dataset_name, dataset_type=dataset_type, split=split
+    )
+    dataloader = dataset_cls.init_as_loader(
+        batch_size=batch_size,
+        shuffle=shuffle,
+        pin_memory=pin_memory,
+        num_workers=num_workers,
+        collate_fn=collate_fn,
+        drop_last=drop_last,
+        worker_init_fn=worker_init_fn,
+        indices=indices,
+        **kwargs,
+    )
     return dataloader
 
 
@@ -78,10 +112,28 @@ def create_compound_dataset(datasets, common_keys=None):
     return compound_dataset
 
 
-def create_compound_dataloader(datasets, common_keys=None, batch_size=1, shuffle=False, num_workers=0, collate_fn=None,
-                               pin_memory=False, drop_last=False, worker_init_fn=None, indices=None):
-    dataloader = CompoundDataset.init_as_loader(datasets=datasets, common_keys=common_keys, batch_size=batch_size,
-                                                shuffle=shuffle, pin_memory=pin_memory, num_workers=num_workers,
-                                                collate_fn=collate_fn, drop_last=drop_last,
-                                                worker_init_fn=worker_init_fn, indices=indices)
+def create_compound_dataloader(
+    datasets,
+    common_keys=None,
+    batch_size=1,
+    shuffle=False,
+    num_workers=0,
+    collate_fn=None,
+    pin_memory=False,
+    drop_last=False,
+    worker_init_fn=None,
+    indices=None,
+):
+    dataloader = CompoundDataset.init_as_loader(
+        datasets=datasets,
+        common_keys=common_keys,
+        batch_size=batch_size,
+        shuffle=shuffle,
+        pin_memory=pin_memory,
+        num_workers=num_workers,
+        collate_fn=collate_fn,
+        drop_last=drop_last,
+        worker_init_fn=worker_init_fn,
+        indices=indices,
+    )
     return dataloader

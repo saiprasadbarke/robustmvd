@@ -38,7 +38,7 @@ class MVSNet(nn.Module):
         self.sample_in_inv_depth_space = sample_in_inv_depth_space
 
     def forward(self, images, poses, intrinsics, keyview_idx, depth_range, **_):
-        N = images[0].shape[0] # batch size
+        N = images[0].shape[0]  # batch size
         # Create the depth samples from the minimum and maximum depth. If no depth range is provided, use the default range [0.2,100]
         if depth_range is None:
             if self.sample_in_inv_depth_space:
@@ -66,9 +66,12 @@ class MVSNet(nn.Module):
                 )
             else:
                 depth_samples = torch.linspace(
-                    min_depth[0], max_depth[0], self.num_sampling_steps, dtype=torch.float32
+                    min_depth[0],
+                    max_depth[0],
+                    self.num_sampling_steps,
+                    dtype=torch.float32,
                 )
-            
+
         depth_samples = torch.stack(N * [depth_samples])
         depth_samples = depth_samples.to(images[0].device)
         proj_mats = []
@@ -77,14 +80,16 @@ class MVSNet(nn.Module):
             for intrinsic, pose, cur_keyview_idx in zip(
                 intrinsic_batch, pose_batch, keyview_idx
             ):
-                scale_arr = torch.tensor([[0.25] * 3, [0.25] * 3, [1.0] * 3], device=intrinsic.device)  # 3, 3
+                scale_arr = torch.tensor(
+                    [[0.25] * 3, [0.25] * 3, [1.0] * 3], device=intrinsic.device
+                )  # 3, 3
                 intrinsic = (
                     intrinsic * scale_arr
                 )  # scale intrinsics to 4x downsampling that happens within the model
 
                 proj_mat = pose
                 proj_mat[:3, :4] = torch.matmul(intrinsic, proj_mat[:3, :4])
-                #proj_mat = proj_mat.astype(torch.float32)
+                # proj_mat = proj_mat.astype(torch.float32)
 
                 if idx == cur_keyview_idx:
                     proj_mat = torch.inverse(proj_mat)
@@ -111,7 +116,7 @@ class MVSNet(nn.Module):
         # proj_mats: (B, V, 4, 4)
         # depth_samples: (B, D)
         B, V, _, H, W = images.shape
-        D = depth_samples.shape[1] # value of D should be 192
+        D = depth_samples.shape[1]  # value of D should be 192
 
         # step 1. feature extraction
         # in: images; out: 32-channel feature maps
@@ -146,11 +151,24 @@ class MVSNet(nn.Module):
 
         with torch.no_grad():
             # sum probability of 4 consecutive depth indices
-            prob_volume_sum4 = 4 * F.avg_pool3d(F.pad(prob_volume.unsqueeze(1), pad=(0, 0, 0, 0, 1, 2)),(4, 1, 1),stride=1).squeeze(1)  # (B, D, h, w)
-            
-            depth_index = depth_regression(prob_volume,torch.arange(D, device=prob_volume.device,dtype=prob_volume.dtype),).long()  # (B, h, w)
+            prob_volume_sum4 = 4 * F.avg_pool3d(
+                F.pad(prob_volume.unsqueeze(1), pad=(0, 0, 0, 0, 1, 2)),
+                (4, 1, 1),
+                stride=1,
+            ).squeeze(
+                1
+            )  # (B, D, h, w)
 
-            confidence = torch.gather(prob_volume_sum4, 1, depth_index.unsqueeze(1)).squeeze(1)  # (B, h, w)
+            depth_index = depth_regression(
+                prob_volume,
+                torch.arange(D, device=prob_volume.device, dtype=prob_volume.dtype),
+            ).long()  # (B, h, w)
+
+            confidence = torch.gather(
+                prob_volume_sum4, 1, depth_index.unsqueeze(1)
+            ).squeeze(
+                1
+            )  # (B, h, w)
 
         pred_depth_uncertainty = 1 - confidence
 
@@ -163,7 +181,13 @@ class MVSNet(nn.Module):
         return pred, aux
 
     def input_adapter(
-        self, images, keyview_idx, poses=None, intrinsics=None, depth_range=None, masks=None
+        self,
+        images,
+        keyview_idx,
+        poses=None,
+        intrinsics=None,
+        depth_range=None,
+        masks=None,
     ):
         device = get_torch_model_device(self)
 
@@ -177,8 +201,8 @@ class MVSNet(nn.Module):
         #     )
         #     images = resized["images"]
         #     intrinsics = resized["intrinsics"]
-        
-        # TODO: Add augmentations here. 
+
+        # TODO: Add augmentations here.
 
         images, keyview_idx, intrinsics, poses, depth_range, masks = to_torch(
             (images, keyview_idx, intrinsics, poses, depth_range, masks), device=device
@@ -217,9 +241,7 @@ def mvsnet_train(pretrained=True, weights=None, train=False, num_gpus=1, **kwarg
 
 @register_model(trainable=False)
 def mvsnet_dtu_test(pretrained=True, weights=None, train=False, num_gpus=1, **kwargs):
-    pretrained_weights = (
-        "/misc/lmbraid19/barkes/robustmvd/training/mvsnet/debug_run/checkpoints/snapshot-iter-000082883.pt"
-    )
+    pretrained_weights = "/misc/lmbraid19/barkes/robustmvd/training/mvsnet/debug_run/checkpoints/snapshot-iter-000082883.pt"
     weights = pretrained_weights if (pretrained and weights is None) else None
     cfg = {"sample_in_inv_depth_space": False, "num_sampling_steps": 192}
     model = build_model_with_cfg(
@@ -231,11 +253,10 @@ def mvsnet_dtu_test(pretrained=True, weights=None, train=False, num_gpus=1, **kw
     )
     return model
 
+
 @register_model(trainable=False)
 def mvsnet_bmvs_test(pretrained=True, weights=None, train=False, num_gpus=1, **kwargs):
-    pretrained_weights = (
-        "/misc/lmbraid19/barkes/robustmvd/training/mvsnet/debug_blendedmvs/checkpoints/snapshot-iter-000129930.pt"
-    )
+    pretrained_weights = "/misc/lmbraid19/barkes/robustmvd/training/mvsnet/debug_blendedmvs/checkpoints/snapshot-iter-000129930.pt"
     weights = pretrained_weights if (pretrained and weights is None) else None
     cfg = {"sample_in_inv_depth_space": False, "num_sampling_steps": 192}
     model = build_model_with_cfg(

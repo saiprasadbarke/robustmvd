@@ -7,25 +7,25 @@ _SPAM = 5
 _NOTSET = 0
 
 _levelToName = {
-    _CRITICAL: 'CRITICAL',
-    _ERROR: 'ERROR',
-    _WARNING: 'WARNING',
-    _INFO: 'INFO',
-    _DEBUG: 'DEBUG',
-    _SPAM: 'SPAM',
-    _NOTSET: 'NOTSET',
+    _CRITICAL: "CRITICAL",
+    _ERROR: "ERROR",
+    _WARNING: "WARNING",
+    _INFO: "INFO",
+    _DEBUG: "DEBUG",
+    _SPAM: "SPAM",
+    _NOTSET: "NOTSET",
 }
 _nameToLevel = {
-    'CRITICAL': _CRITICAL,
-    'ERROR': _ERROR,
-    'WARNING': _WARNING,
-    'INFO': _INFO,
-    'DEBUG': _DEBUG,
-    'SPAM': _SPAM,
-    'NOTSET': _NOTSET,
+    "CRITICAL": _CRITICAL,
+    "ERROR": _ERROR,
+    "WARNING": _WARNING,
+    "INFO": _INFO,
+    "DEBUG": _DEBUG,
+    "SPAM": _SPAM,
+    "NOTSET": _NOTSET,
 }
 
-_log_level = _nameToLevel['INFO']
+_log_level = _nameToLevel["INFO"]
 _log_file_paths = []
 _log_files = []
 
@@ -37,9 +37,9 @@ def add_log_file(log_file_path, flush_line=False):
     if log_file_path not in _log_file_paths:
         _log_file_paths.append(log_file_path)
         if flush_line:
-            _log_files.append(open(log_file_path, 'a', buffering=1))
+            _log_files.append(open(log_file_path, "a", buffering=1))
         else:
-            _log_files.append(open(log_file_path, 'a'))
+            _log_files.append(open(log_file_path, "a"))
 
 
 def remove_log_file(log_file_path):
@@ -84,42 +84,42 @@ def _log(level, msg=None):
 
 
 def spam(msg=None):
-    if _log_level > _nameToLevel['SPAM']:
+    if _log_level > _nameToLevel["SPAM"]:
         return
     else:
         _log("SPAM", msg)
 
 
 def debug(msg=None):
-    if _log_level > _nameToLevel['DEBUG']:
+    if _log_level > _nameToLevel["DEBUG"]:
         return
     else:
         _log("DEBUG", msg)
 
 
 def info(msg=None):
-    if _log_level > _nameToLevel['INFO']:
+    if _log_level > _nameToLevel["INFO"]:
         return
     else:
         _log("INFO", msg)
 
 
 def warning(msg=None):
-    if _log_level > _nameToLevel['WARNING']:
+    if _log_level > _nameToLevel["WARNING"]:
         return
     else:
         _log("WARNING", msg)
 
 
 def error(msg=None):
-    if _log_level > _nameToLevel['ERROR']:
+    if _log_level > _nameToLevel["ERROR"]:
         return
     else:
         _log("ERROR", msg)
 
 
 def critical(msg=None):
-    if _log_level > _nameToLevel['CRITICAL']:
+    if _log_level > _nameToLevel["CRITICAL"]:
         return
     else:
         _log("CRITICAL", msg)

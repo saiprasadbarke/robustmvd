@@ -22,12 +22,23 @@ class Sample(metaclass=abc.ABCMeta):
 
 
 class Dataset(torch.utils.data.Dataset, metaclass=abc.ABCMeta):
-
-    def __init__(self, root, augmentations=None, input_size=None, target_size=None, to_torch=False, updates=None, update_strict=False,
-                 layouts=None, verbose=True, **kwargs):
-
+    def __init__(
+        self,
+        root,
+        augmentations=None,
+        input_size=None,
+        target_size=None,
+        to_torch=False,
+        updates=None,
+        update_strict=False,
+        layouts=None,
+        verbose=True,
+        **kwargs,
+    ):
         augmentations = [] if augmentations is None else augmentations
-        augmentations = augmentations if isinstance(augmentations, list) else [augmentations]
+        augmentations = (
+            augmentations if isinstance(augmentations, list) else [augmentations]
+        )
         self.verbose = verbose
 
         self.root = None
@@ -37,8 +48,12 @@ class Dataset(torch.utils.data.Dataset, metaclass=abc.ABCMeta):
             print(f"Initializing dataset {self.name} from {self.root}")
 
         self._seed_initialized = False
-        self.input_resize = ResizeInputs(size=input_size) if input_size is not None else None
-        self.target_resize = ResizeTargets(size=target_size) if target_size is not None else None
+        self.input_resize = (
+            ResizeInputs(size=input_size) if input_size is not None else None
+        )
+        self.target_resize = (
+            ResizeTargets(size=target_size) if target_size is not None else None
+        )
         self.augmentations = []
         self._init_augmentations(augmentations)
         self.to_torch = to_torch
@@ -54,11 +69,17 @@ class Dataset(torch.utils.data.Dataset, metaclass=abc.ABCMeta):
         if self.verbose:
             print(f"\tNumber of samples: {len(self)}")
             if self.updates:
-                print(f"\tUpdates: {', '.join([update.name for update in self.updates])}")
+                print(
+                    f"\tUpdates: {', '.join([update.name for update in self.updates])}"
+                )
             if self.input_resize is not None:
-                print(f"\tImage resolution (height, width): ({input_size[0]}, {input_size[1]})")
+                print(
+                    f"\tImage resolution (height, width): ({input_size[0]}, {input_size[1]})"
+                )
             if self.target_resize is not None:
-                print(f"\Target resolution (height, width): ({target_size[0]}, {target_size[1]})")
+                print(
+                    f"\Target resolution (height, width): ({target_size[0]}, {target_size[1]})"
+                )
             print(f"Finished initializing dataset {self.name}.")
             print()
 
@@ -103,7 +124,7 @@ class Dataset(torch.utils.data.Dataset, metaclass=abc.ABCMeta):
         sample_list_path = _get_sample_list_path(self.name)
         if self.verbose:
             print(f"\tInitializing samples from list at {sample_list_path}")
-        with open(sample_list_path, 'rb') as sample_list:
+        with open(sample_list_path, "rb") as sample_list:
             self.samples = pickle.load(sample_list)
 
     def _write_samples_list(self, path=None):
@@ -111,7 +132,7 @@ class Dataset(torch.utils.data.Dataset, metaclass=abc.ABCMeta):
         if osp.isdir(osp.split(path)[0]):
             if self.verbose:
                 print(f"Writing sample list to {path}")
-            with open(path, 'wb') as file:
+            with open(path, "wb") as file:
                 pickle.dump(self.samples, file)
         elif self.verbose:
             print(f"Could not write sample list to {path}")
@@ -119,7 +140,8 @@ class Dataset(torch.utils.data.Dataset, metaclass=abc.ABCMeta):
     def _init_updates(self, updates, update_strict=False):
         """The _init_updates() method initializes the dataset's updates. It takes two arguments, updates and update_strict. If updates is not None, the method will loop over each update in updates. If the update is an instance of Updates, it will be added to the dataset's updates. Otherwise, if the update is a string, it will be assumed to be a path to a pickled update and loaded using the PickledUpdates class. The loaded update is then added to the dataset's updates.
 
-        If update_strict is True, the method will set the dataset's allowed indices to only those indices that appear in all updates. Otherwise, all indices will be allowed."""
+        If update_strict is True, the method will set the dataset's allowed indices to only those indices that appear in all updates. Otherwise, all indices will be allowed.
+        """
         if updates is not None:
             for update in updates:
                 if isinstance(update, Updates):
@@ -165,7 +187,8 @@ class Dataset(torch.utils.data.Dataset, metaclass=abc.ABCMeta):
         It loads the sample's data and adds metadata to the dictionary. It then preprocesses the sample using _preprocess_sample().
         It applies each update in the dataset's updates, then applies each augmentation function in the dataset's augmentation functions.
         If resize is not None, it resizes the sample using the resize method.
-        Finally, if to_torch is True, it coallates the samples into a torch.Tensor using the utils.torch_collate() method."""
+        Finally, if to_torch is True, it coallates the samples into a torch.Tensor using the utils.torch_collate() method.
+        """
         index = self._allowed_indices[index]
         sample = self.samples[index]
 
@@ -275,18 +298,28 @@ class Dataset(torch.utils.data.Dataset, metaclass=abc.ABCMeta):
         print("Mean time per batch: %1.4fs." % ((end - start) / num_batches))
 
     @classmethod
-    def write_config(cls, path, dataset_cls_name, augmentations=None, input_size=None, to_torch=False, updates=None,
-                     update_strict=False, layouts=None):
+    def write_config(
+        cls,
+        path,
+        dataset_cls_name,
+        augmentations=None,
+        input_size=None,
+        to_torch=False,
+        updates=None,
+        update_strict=False,
+        layouts=None,
+    ):
+        config = {
+            "dataset_cls_name": dataset_cls_name,
+            "augmentations": augmentations,
+            "input_size": input_size,
+            "to_torch": to_torch,
+            "updates": updates,
+            "update_strict": update_strict,
+            "layouts": layouts,
+        }
 
-        config = {'dataset_cls_name': dataset_cls_name,
-                  'augmentations': augmentations,
-                  'input_size': input_size,
-                  'to_torch': to_torch,
-                  'updates': updates,
-                  'update_strict': update_strict,
-                  'layouts': layouts}
-
-        with open(path, 'wb') as file:
+        with open(path, "wb") as file:
             pickle.dump(config, file)
 
     @classmethod
@@ -319,7 +352,7 @@ class Dataset(torch.utils.data.Dataset, metaclass=abc.ABCMeta):
         return dataset_cls(**config)
 
 
-def _get_paths(): # replace this from the internal repo
+def _get_paths():  # replace this from the internal repo
     paths_file = osp.join(osp.dirname(osp.realpath(__file__)), "paths.toml")
     with open(paths_file, "r") as paths_file:
         return pytoml.load(paths_file)
@@ -349,23 +382,29 @@ def _get_path(*keys):
 
 
 def _preprocess_sample(sample):
-    assert ('depth' in sample or 'invdepth' in sample) and (not ('depth' in sample and 'invdepth' in sample))
+    assert ("depth" in sample or "invdepth" in sample) and (
+        not ("depth" in sample and "invdepth" in sample)
+    )
 
-    if 'depth' in sample:
-        with np.errstate(divide='ignore', invalid='ignore'):
-            sample['depth'] = sample['depth'].astype(np.float32)
-            sample['depth'][sample['depth'] <= 0] = 0
-            sample['depth'][~np.isfinite(sample['depth'])] = 0
-            sample['invdepth'] = np.nan_to_num(1 / sample['depth'], copy=False, nan=0, posinf=0, neginf=0)
+    if "depth" in sample:
+        with np.errstate(divide="ignore", invalid="ignore"):
+            sample["depth"] = sample["depth"].astype(np.float32)
+            sample["depth"][sample["depth"] <= 0] = 0
+            sample["depth"][~np.isfinite(sample["depth"])] = 0
+            sample["invdepth"] = np.nan_to_num(
+                1 / sample["depth"], copy=False, nan=0, posinf=0, neginf=0
+            )
 
-    elif 'invdepth' in sample:
-        sample['invdepth'] = sample['invdepth'].astype(np.float32)
-        sample['invdepth'][sample['invdepth'] <= 0] = 0
-        sample['invdepth'][~np.isfinite(sample['invdepth'])] = 0
-        sample['depth'] = np.nan_to_num(1 / sample['invdepth'], copy=False, nan=0, posinf=0, neginf=0)
+    elif "invdepth" in sample:
+        sample["invdepth"] = sample["invdepth"].astype(np.float32)
+        sample["invdepth"][sample["invdepth"] <= 0] = 0
+        sample["invdepth"][~np.isfinite(sample["invdepth"])] = 0
+        sample["depth"] = np.nan_to_num(
+            1 / sample["invdepth"], copy=False, nan=0, posinf=0, neginf=0
+        )
 
-    if 'depth_range' not in sample:
-        sample['depth_range'] = utils.compute_depth_range(depth=sample['depth'])
+    if "depth_range" not in sample:
+        sample["depth_range"] = utils.compute_depth_range(depth=sample["depth"])
 
     # This section of the function transforms the poses from keyframe to reference frame.
     # It does this by inverting the transformation from keyframe to reference frame, and then multiplying each pose by this inverted transformation to get the transformation from the reference frame to the keyframe.

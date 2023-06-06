@@ -19,7 +19,9 @@ def set_random_seed(seed=None, use_gpu=True):
         torch.cuda.manual_seed_all(seed)
 
 
-def compute_depth_range(depth=None, invdepth=None, default_min_depth=0.1, default_max_depth=100.):
+def compute_depth_range(
+    depth=None, invdepth=None, default_min_depth=0.1, default_max_depth=100.0
+):
     if depth is not None:
         mask = depth > 0
         if mask.any():
@@ -27,20 +29,22 @@ def compute_depth_range(depth=None, invdepth=None, default_min_depth=0.1, defaul
             max_depth = np.max(depth[mask])
             depth_range = (min_depth, max_depth)
             return depth_range
-        
+
     if invdepth is not None:
         mask = invdepth > 0
         if mask.any():
             min_invdepth = np.min(invdepth[mask])
             max_invdepth = np.max(invdepth[mask])
-            depth_range = (1./max_invdepth, 1./min_invdepth)
+            depth_range = (1.0 / max_invdepth, 1.0 / min_invdepth)
             return depth_range
-        
+
     return (default_min_depth, default_max_depth)
 
 
-def get_function(name):  # from https://github.com/aschampion/diluvian/blob/master/diluvian/util.py
-    mod_name, func_name = name.rsplit('.', 1)
+def get_function(
+    name,
+):  # from https://github.com/aschampion/diluvian/blob/master/diluvian/util.py
+    mod_name, func_name = name.rsplit(".", 1)
     mod = importlib.import_module(mod_name)
     func = getattr(mod, func_name)
     return func
@@ -52,11 +56,11 @@ def get_class(name):
 
 def module_exists(name):
     spec = importlib.util.find_spec(name)
-    return (spec is not None)
+    return spec is not None
 
 
 def function_exists(name):
-    mod_name, fct_name = name.rsplit('.', 1)
+    mod_name, fct_name = name.rsplit(".", 1)
     spec = importlib.util.find_spec(mod_name)
     if spec is None:
         return False
@@ -74,7 +78,7 @@ def get_full_class_name(obj):
     if module is None or module == str.__class__.__module__:
         return obj.__class__.__name__  # Avoid reporting __builtin__
     else:
-        return module + '.' + obj.__class__.__name__
+        return module + "." + obj.__class__.__name__
 
 
 def trans_from_transform(T):
@@ -121,7 +125,7 @@ def torch_collate(batch):
 
 def to_torch(data, device=None):
     # adapted from torch.utils.data._utils.collate.default_convert
-    np_str_obj_array_pattern = re.compile(r'[SaUO]')
+    np_str_obj_array_pattern = re.compile(r"[SaUO]")
 
     if data is None:
         return None
@@ -129,11 +133,16 @@ def to_torch(data, device=None):
     elem_type = type(data)
     if isinstance(data, torch.Tensor):
         return data.to(device)
-    elif elem_type.__module__ == 'numpy' and elem_type.__name__ != 'str_' \
-            and elem_type.__name__ != 'string_':
+    elif (
+        elem_type.__module__ == "numpy"
+        and elem_type.__name__ != "str_"
+        and elem_type.__name__ != "string_"
+    ):
         # array of string classes and object
-        if elem_type.__name__ == 'ndarray' \
-                and np_str_obj_array_pattern.search(data.dtype.str) is not None:
+        if (
+            elem_type.__name__ == "ndarray"
+            and np_str_obj_array_pattern.search(data.dtype.str) is not None
+        ):
             return data
         return torch.as_tensor(data, device=device)
     elif isinstance(data, collections.abc.Mapping):
@@ -142,11 +151,13 @@ def to_torch(data, device=None):
         except TypeError:
             # The mapping type may not support `__init__(iterable)`...
             return {key: to_torch(data[key], device=device) for key in data}
-    elif isinstance(data, tuple) and hasattr(data, '_fields'):  # namedtuple
+    elif isinstance(data, tuple) and hasattr(data, "_fields"):  # namedtuple
         return elem_type(*(to_torch(d, device=device) for d in data))
     elif isinstance(data, tuple):
         return [to_torch(d, device=device) for d in data]  # Backwards compatibility.
-    elif isinstance(data, collections.abc.Sequence) and not isinstance(data, string_classes):
+    elif isinstance(data, collections.abc.Sequence) and not isinstance(
+        data, string_classes
+    ):
         try:
             return elem_type([to_torch(d, device=device) for d in data])
         except TypeError:
@@ -173,8 +184,12 @@ def numpy_collate(batch):
     elif isinstance(elem, torch.Tensor):
         return numpy_collate([b.cpu().detach().numpy() for b in batch])
 
-    elif elem_type.__module__ == 'numpy' and elem_type.__name__ != 'str_' and elem_type.__name__ != 'string_':
-        if elem_type.__name__ == 'ndarray' or elem_type.__name__ == 'memmap':
+    elif (
+        elem_type.__module__ == "numpy"
+        and elem_type.__name__ != "str_"
+        and elem_type.__name__ != "string_"
+    ):
+        if elem_type.__name__ == "ndarray" or elem_type.__name__ == "memmap":
             return np.stack(batch, 0)
         elif elem.shape == ():  # scalars
             return np.array(batch)
@@ -190,12 +205,14 @@ def numpy_collate(batch):
 
     elif isinstance(elem, collections.abc.Mapping):
         try:
-            return elem_type({key: numpy_collate([d[key] for d in batch]) for key in elem})
+            return elem_type(
+                {key: numpy_collate([d[key] for d in batch]) for key in elem}
+            )
         except TypeError:
             # The mapping type may not support `__init__(iterable)`.
             return {key: numpy_collate([d[key] for d in batch]) for key in elem}
 
-    elif isinstance(elem, tuple) and hasattr(elem, '_fields'):  # namedtuple
+    elif isinstance(elem, tuple) and hasattr(elem, "_fields"):  # namedtuple
         return elem_type(*(numpy_collate(samples) for samples in zip(*batch)))
 
     elif isinstance(elem, collections.abc.Sequence):
@@ -203,11 +220,13 @@ def numpy_collate(batch):
         it = iter(batch)
         elem_size = len(next(it))
         if not all(len(elem) == elem_size for elem in it):
-            raise RuntimeError('each element in list of batch should be of equal size')
+            raise RuntimeError("each element in list of batch should be of equal size")
         transposed = list(zip(*batch))  # It may be accessed twice, so we use a list.
 
         if isinstance(elem, tuple):
-            return [numpy_collate(samples) for samples in transposed]  # Backwards compatibility.
+            return [
+                numpy_collate(samples) for samples in transposed
+            ]  # Backwards compatibility.
         else:
             try:
                 return elem_type([numpy_collate(samples) for samples in transposed])
@@ -225,8 +244,11 @@ def to_numpy(data):
     elem_type = type(data)
     if isinstance(data, torch.Tensor):
         return data.detach().cpu().numpy()
-    elif elem_type.__module__ == 'numpy' and elem_type.__name__ != 'str_' \
-            and elem_type.__name__ != 'string_':
+    elif (
+        elem_type.__module__ == "numpy"
+        and elem_type.__name__ != "str_"
+        and elem_type.__name__ != "string_"
+    ):
         return data
     elif isinstance(data, collections.abc.Mapping):
         try:
@@ -234,11 +256,13 @@ def to_numpy(data):
         except TypeError:
             # The mapping type may not support `__init__(iterable)`.
             return {key: to_numpy(data[key]) for key in data}
-    elif isinstance(data, tuple) and hasattr(data, '_fields'):  # namedtuple
+    elif isinstance(data, tuple) and hasattr(data, "_fields"):  # namedtuple
         return elem_type(*(to_numpy(d) for d in data))
     elif isinstance(data, tuple):
         return [to_numpy(d) for d in data]  # Backwards compatibility.
-    elif isinstance(data, collections.abc.Sequence) and not isinstance(data, string_classes):
+    elif isinstance(data, collections.abc.Sequence) and not isinstance(
+        data, string_classes
+    ):
         try:
             return elem_type([to_numpy(d) for d in data])
         except TypeError:
@@ -254,7 +278,7 @@ def get_torch_model_device(model):
     is_cuda = next(it).is_cuda
     device = next(it).device
     if not all((elem.device == device) for elem in it):
-        raise RuntimeError('All model parameters need to be on the same device')
+        raise RuntimeError("All model parameters need to be on the same device")
     return device
 
 
@@ -263,7 +287,7 @@ def check_torch_model_cuda(model):
     it = iter(model.parameters())
     is_cuda = next(it).is_cuda
     if not all((elem.is_cuda == is_cuda) for elem in it):
-        raise RuntimeError('All model parameters need to be on the same device')
+        raise RuntimeError("All model parameters need to be on the same device")
     return is_cuda
 
 
@@ -309,7 +333,9 @@ def exclude_index(l, exclude_idx):
         exclude_indices = exclude_idx
         ret = []
         for batch_idx, exclude_idx in enumerate(exclude_indices):
-            ret.append([ele[batch_idx] for idx, ele in enumerate(l) if idx != exclude_idx])
+            ret.append(
+                [ele[batch_idx] for idx, ele in enumerate(l) if idx != exclude_idx]
+            )
 
         if len(ret) > 0 and all([len(ele) > 0 for ele in ret]):
             transposed = list(zip(*ret))
@@ -344,7 +370,7 @@ def batched_index(l, eles):
 
 
 def get_paths(paths_file):
-    with open(paths_file, 'r') as paths_file:
+    with open(paths_file, "r") as paths_file:
         return pytoml.load(paths_file)
 
 
@@ -354,7 +380,11 @@ def get_path(paths_file, *keys):
 
     for idx, key in enumerate(keys):
         if key in paths:
-            if key in paths and (isinstance(paths[key], str) or isinstance(paths[key], list)) and idx == len(keys) - 1:
+            if (
+                key in paths
+                and (isinstance(paths[key], str) or isinstance(paths[key], list))
+                and idx == len(keys) - 1
+            ):
                 path = paths[key]
             else:
                 paths = paths[key]

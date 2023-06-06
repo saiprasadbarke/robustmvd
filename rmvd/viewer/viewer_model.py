@@ -20,7 +20,15 @@ class ViewerModel:
         displays = []
         for visualization in self._layout.visualizations:
             display = visualization.create_display(manager)
-            displays.append((visualization.col, visualization.row, visualization.colspan, visualization.rowspan, display))
+            displays.append(
+                (
+                    visualization.col,
+                    visualization.row,
+                    visualization.colspan,
+                    visualization.rowspan,
+                    display,
+                )
+            )
         return displays
 
     @property

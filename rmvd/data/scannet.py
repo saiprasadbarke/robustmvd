@@ -27,29 +27,28 @@ class ScanNetDepth:
 
     def load(self, root):
         import cv2
+
         path = osp.join(root, self.path)
 
         depth = cv2.imread(path, cv2.IMREAD_ANYDEPTH)
-        depth = (depth / 1000.0)  # H, W
+        depth = depth / 1000.0  # H, W
 
         depth = depth.astype(np.float32)
-        depth = np.nan_to_num(depth, posinf=0., neginf=0., nan=0.)
+        depth = np.nan_to_num(depth, posinf=0.0, neginf=0.0, nan=0.0)
         depth = np.expand_dims(depth, 0)  # 1HW
 
         return depth
 
 
 class ScanNetSample(Sample):
-
     def __init__(self, name, base):
         self.name = name
         self.base = base
         self.data = {}
 
     def load(self, root):
-
         base = osp.join(root, self.base)
-        out_dict = {'_base': base, '_name': self.name}
+        out_dict = {"_base": base, "_name": self.name}
 
         for key, val in self.data.items():
             if not isinstance(val, list):
@@ -58,17 +57,19 @@ class ScanNetSample(Sample):
                 else:
                     out_dict[key] = val
             else:
-                out_dict[key] = [ele if isinstance(ele, np.ndarray) else ele.load(base) for ele in val]
+                out_dict[key] = [
+                    ele if isinstance(ele, np.ndarray) else ele.load(base)
+                    for ele in val
+                ]
 
         return out_dict
 
 
 @register_default_dataset
 class ScanNetRobustMVD(Dataset):
-
-    base_dataset = 'scannet'
-    split = 'robustmvd'
-    dataset_type = 'mvd'
+    base_dataset = "scannet"
+    split = "robustmvd"
+    dataset_type = "mvd"
 
     def __init__(self, root=None, layouts=None, **kwargs):
         root = root if root is not None else self._get_path("scannet", "root")

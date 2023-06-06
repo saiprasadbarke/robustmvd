@@ -22,4 +22,13 @@
     "peacock.remoteColor": "#dd0531",
     "editor.tabCompletion": "on",
     "diffEditor.codeLens": true,
+    "python.formatting.provider": "none",
+    "python.formatting.blackArgs": [
+        "--line-length",
+        "120"
+    ],
+    "python.linting.enabled": true,
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.black-formatter"
+    }
 }

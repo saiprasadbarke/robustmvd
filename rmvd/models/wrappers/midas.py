@@ -8,7 +8,13 @@ import cv2
 
 from ..registry import register_model
 from ..helpers import build_model_with_cfg
-from rmvd.utils import get_path, get_torch_model_device, to_numpy, to_torch, select_by_index
+from rmvd.utils import (
+    get_path,
+    get_torch_model_device,
+    to_numpy,
+    to_torch,
+    select_by_index,
+)
 
 
 class MiDaS_Wrapped(nn.Module):
@@ -16,7 +22,8 @@ class MiDaS_Wrapped(nn.Module):
         super().__init__()
 
         import sys
-        paths_file = osp.join(osp.dirname(osp.realpath(__file__)), 'paths.toml')
+
+        paths_file = osp.join(osp.dirname(osp.realpath(__file__)), "paths.toml")
         repo_path = get_path(paths_file, "midas", "root")
         sys.path.insert(0, repo_path)
         from midas.midas_net import MidasNet
@@ -42,13 +49,15 @@ class MiDaS_Wrapped(nn.Module):
             ]
         )
 
-    def input_adapter(self, images, keyview_idx, poses=None, intrinsics=None, depth_range=None):
+    def input_adapter(
+        self, images, keyview_idx, poses=None, intrinsics=None, depth_range=None
+    ):
         device = get_torch_model_device(self)
 
         image_batch = select_by_index(images, keyview_idx)
         tmp_images = []
         for image in image_batch:
-            image = image / 255.
+            image = image / 255.0
             image = np.transpose(image, [1, 2, 0])
             image = self.transform({"image": image})["image"]
             tmp_images.append(image)
@@ -56,7 +65,7 @@ class MiDaS_Wrapped(nn.Module):
 
         image = to_torch(image, device=device)
 
-        sample = {'image': image}
+        sample = {"image": image}
         return sample
 
     def forward(self, image, **_):
@@ -66,17 +75,23 @@ class MiDaS_Wrapped(nn.Module):
     def output_adapter(self, model_output):
         pred_invdepth = model_output
         pred_invdepth = to_numpy(pred_invdepth)
-        with np.errstate(divide='ignore', invalid='ignore'):
+        with np.errstate(divide="ignore", invalid="ignore"):
             pred_depth = 1 / pred_invdepth
         pred_depth = pred_depth[:, None]
-        pred = {'depth': pred_depth}
+        pred = {"depth": pred_depth}
         aux = {}
         return pred, aux
 
 
 @register_model(trainable=False)
-def midas_big_v2_1_wrapped(pretrained=True, weights=None, train=False, num_gpus=1, **kwargs):
-    assert pretrained and (weights is None), "Model supports only pretrained=True, weights=None."
+def midas_big_v2_1_wrapped(
+    pretrained=True, weights=None, train=False, num_gpus=1, **kwargs
+):
+    assert pretrained and (
+        weights is None
+    ), "Model supports only pretrained=True, weights=None."
     cfg = {"weights_name": "midas_v21-f6b98070.pt"}
-    model = build_model_with_cfg(model_cls=MiDaS_Wrapped, cfg=cfg, weights=None, train=train, num_gpus=num_gpus)
+    model = build_model_with_cfg(
+        model_cls=MiDaS_Wrapped, cfg=cfg, weights=None, train=train, num_gpus=num_gpus
+    )
     return model

@@ -2,15 +2,27 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from .utils import m_univariate_laplace_nll, pointwise_univariate_laplace_nll, mae, pointwise_ae
+from .utils import (
+    m_univariate_laplace_nll,
+    pointwise_univariate_laplace_nll,
+    mae,
+    pointwise_ae,
+)
 from .registry import register_loss
 from rmvd.utils import logging
 
 
 class MultiScaleUniLaplace(nn.Module):
-    def __init__(self, model, weight_decay=1e-4, gt_interpolation="nearest", modality="invdepth", verbose=True,
-                 deterministic_loss_iterations=2000, mean_scaling_factor=1):
-
+    def __init__(
+        self,
+        model,
+        weight_decay=1e-4,
+        gt_interpolation="nearest",
+        modality="invdepth",
+        verbose=True,
+        deterministic_loss_iterations=2000,
+        mean_scaling_factor=1,
+    ):
         super().__init__()
 
         self.verbose = verbose
@@ -46,12 +58,18 @@ class MultiScaleUniLaplace(nn.Module):
     def get_regularization_parameters(self, model):
         reg_params = []
         for name, param in model.named_parameters():
-            if "pred" not in name and not name.endswith("bias") and not name.endswith(
-                    "bn.weight") and param.requires_grad:
+            if (
+                "pred" not in name
+                and not name.endswith("bias")
+                and not name.endswith("bn.weight")
+                and param.requires_grad
+            ):
                 reg_params.append((name, param))
 
         if self.verbose:
-            logging.info(f"\tApplying regularization loss with weight decay {self.weight_decay} on:")
+            logging.info(
+                f"\tApplying regularization loss with weight decay {self.weight_decay} on:"
+            )
             for i, val in enumerate(reg_params):
                 name, param = val
                 logging.info(f"\t\t#{i} {name}: {param.shape} ({param.numel()})")
@@ -59,7 +77,6 @@ class MultiScaleUniLaplace(nn.Module):
         return reg_params
 
     def forward(self, sample_inputs, sample_gt, pred, aux, iteration):
-
         sub_losses = {}
         pointwise_losses = {}
 
@@ -73,22 +90,44 @@ class MultiScaleUniLaplace(nn.Module):
         total_reg_loss = 0
 
         for level, (pred, pred_log_b) in enumerate(zip(preds_all, pred_log_bs_all)):
-
             with torch.no_grad():
-                gt_resampled = F.interpolate(gt, size=pred.shape[-2:], mode=self.gt_interpolation)
-                gt_mask_resampled = F.interpolate(gt_mask.float(), size=pred.shape[-2:], mode="nearest") == 1.0
+                gt_resampled = F.interpolate(
+                    gt, size=pred.shape[-2:], mode=self.gt_interpolation
+                )
+                gt_mask_resampled = (
+                    F.interpolate(gt_mask.float(), size=pred.shape[-2:], mode="nearest")
+                    == 1.0
+                )
 
             if iteration < self.deterministic_loss_iterations:
-                loss = mae(gt=gt_resampled, pred=pred, mask=gt_mask_resampled, weight=self.loss_weights[level])
-                pointwise_loss = pointwise_ae(gt=gt_resampled, pred=pred, mask=gt_mask_resampled,
-                                              weight=self.loss_weights[level])
+                loss = mae(
+                    gt=gt_resampled,
+                    pred=pred,
+                    mask=gt_mask_resampled,
+                    weight=self.loss_weights[level],
+                )
+                pointwise_loss = pointwise_ae(
+                    gt=gt_resampled,
+                    pred=pred,
+                    mask=gt_mask_resampled,
+                    weight=self.loss_weights[level],
+                )
 
             else:
-                loss = m_univariate_laplace_nll(gt=gt_resampled, pred_a=pred, pred_log_b=pred_log_b,
-                                                mask=gt_mask_resampled, weight=self.loss_weights[level])
-                pointwise_loss = pointwise_univariate_laplace_nll(gt=gt_resampled, pred_a=pred, pred_log_b=pred_log_b,
-                                                                  mask=gt_mask_resampled,
-                                                                  weight=self.loss_weights[level])
+                loss = m_univariate_laplace_nll(
+                    gt=gt_resampled,
+                    pred_a=pred,
+                    pred_log_b=pred_log_b,
+                    mask=gt_mask_resampled,
+                    weight=self.loss_weights[level],
+                )
+                pointwise_loss = pointwise_univariate_laplace_nll(
+                    gt=gt_resampled,
+                    pred_a=pred,
+                    pred_log_b=pred_log_b,
+                    mask=gt_mask_resampled,
+                    weight=self.loss_weights[level],
+                )
 
             sub_losses["02_mnll/level_%d" % level] = loss
             pointwise_losses["00_nll/level_%d" % level] = pointwise_loss
@@ -109,5 +148,11 @@ class MultiScaleUniLaplace(nn.Module):
 
 @register_loss
 def robust_mvd_loss(**kwargs):
-    return MultiScaleUniLaplace(weight_decay=1e-4, gt_interpolation="nearest", modality="invdepth", deterministic_loss_iterations=2000, 
-                                mean_scaling_factor=1050, **kwargs)
+    return MultiScaleUniLaplace(
+        weight_decay=1e-4,
+        gt_interpolation="nearest",
+        modality="invdepth",
+        deterministic_loss_iterations=2000,
+        mean_scaling_factor=1050,
+        **kwargs,
+    )

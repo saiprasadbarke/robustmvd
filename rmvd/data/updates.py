@@ -5,7 +5,7 @@ import pickle
 from rmvd.utils import logging
 
 
-class Update(metaclass=abc.ABCMeta):    
+class Update(metaclass=abc.ABCMeta):
     def __init__(self):
         pass
 
@@ -15,7 +15,9 @@ class Update(metaclass=abc.ABCMeta):
 
 
 class Updates:
-    def __init__(self, name, root=None, prefix=None, postfix=None, verbose=True, **kwargs):
+    def __init__(
+        self, name, root=None, prefix=None, postfix=None, verbose=True, **kwargs
+    ):
         self.name = name
         self.verbose = verbose
 
@@ -52,7 +54,11 @@ class Updates:
         update_dict_out = {}
 
         for key, val in update_dict.items():
-            key = (self.prefix if self.prefix is not None else "") + key + (self.postfix if self.postfix is not None else "")
+            key = (
+                (self.prefix if self.prefix is not None else "")
+                + key
+                + (self.postfix if self.postfix is not None else "")
+            )
             update_dict_out[key] = val
 
         return update_dict_out
@@ -70,7 +76,6 @@ class Updates:
 
 
 class PickledUpdates(Updates):
-
     def __init__(self, path, **kwargs):
         name = osp.splitext(osp.split(path)[1])[0]
         super().__init__(name=name, path=path, **kwargs)

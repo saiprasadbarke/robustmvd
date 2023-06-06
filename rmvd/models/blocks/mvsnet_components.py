@@ -22,7 +22,9 @@ class ConvBnReLU(nn.Module):
         return F.relu(self.bn(self.conv(x)), inplace=True)
 
 
-class ConvBnReLU3D(nn.Module): #TODO: mvsnet_pl does not use the relu in the forward method but the cvp_mvsnet implementation does. Add an optional argument to the init method to configure the use of relu or leaky relu.
+class ConvBnReLU3D(
+    nn.Module
+):  # TODO: mvsnet_pl does not use the relu in the forward method but the cvp_mvsnet implementation does. Add an optional argument to the init method to configure the use of relu or leaky relu.
     def __init__(self, in_channels, out_channels, kernel_size=3, stride=1, pad=1):
         super().__init__()
         self.conv = nn.Conv3d(
@@ -39,7 +41,9 @@ class ConvBnReLU3D(nn.Module): #TODO: mvsnet_pl does not use the relu in the for
         return F.relu(self.bn(self.conv(x)), inplace=True)
 
 
-class FeatureNet(nn.Module):  #TODO: Modify this code to accept arguments for setting the inchannels, outchannels, kernel size, stride, and padding. This can then be used in cvp_mvsnet implementation. Need an additional optional argument for configuring the use of relu or leaky relu on the convolutions.
+class FeatureNet(
+    nn.Module
+):  # TODO: Modify this code to accept arguments for setting the inchannels, outchannels, kernel size, stride, and padding. This can then be used in cvp_mvsnet implementation. Need an additional optional argument for configuring the use of relu or leaky relu on the convolutions.
     def __init__(self):
         super().__init__()
         self.inplanes = 32
@@ -62,7 +66,9 @@ class FeatureNet(nn.Module):  #TODO: Modify this code to accept arguments for se
         return x
 
 
-class CostRegNet(nn.Module): #TODO: Modify this code to accept arguments for setting the inchannels, outchannels, kernel size, stride, and padding. This can then be used in cvp_mvsnet implementation. Need an additional optional argument for configuring the use of relu or leaky relu on the convolutions.
+class CostRegNet(
+    nn.Module
+):  # TODO: Modify this code to accept arguments for setting the inchannels, outchannels, kernel size, stride, and padding. This can then be used in cvp_mvsnet implementation. Need an additional optional argument for configuring the use of relu or leaky relu on the convolutions.
     def __init__(self):
         super().__init__()
         self.conv0 = ConvBnReLU3D(32, 8)
@@ -77,9 +83,11 @@ class CostRegNet(nn.Module): #TODO: Modify this code to accept arguments for set
         self.conv6 = ConvBnReLU3D(64, 64)
 
         self.conv7 = nn.Sequential(
-            nn.ConvTranspose3d(64, 32, kernel_size=3, padding=1, output_padding=1, stride=2, bias=False),
+            nn.ConvTranspose3d(
+                64, 32, kernel_size=3, padding=1, output_padding=1, stride=2, bias=False
+            ),
             nn.BatchNorm3d(32),
-            nn.ReLU(inplace=True)
+            nn.ReLU(inplace=True),
         )
 
         self.conv9 = nn.Sequential(
@@ -95,7 +103,7 @@ class CostRegNet(nn.Module): #TODO: Modify this code to accept arguments for set
                 16, 8, kernel_size=3, padding=1, output_padding=1, stride=2, bias=False
             ),
             nn.BatchNorm3d(8),
-            nn.ReLU(inplace=True)
+            nn.ReLU(inplace=True),
         )
 
         self.prob = nn.Conv3d(8, 1, 3, stride=1, padding=1)
@@ -107,12 +115,13 @@ class CostRegNet(nn.Module): #TODO: Modify this code to accept arguments for set
         x = self.conv6(self.conv5(conv4))
         x = conv4 + self.conv7(x)
         del conv4
-        x = conv2 + self.conv9(x)[:, :, :, :conv2.shape[3], :]
+        x = conv2 + self.conv9(x)[:, :, :, : conv2.shape[3], :]
         del conv2
         x = conv0 + self.conv11(x)
         del conv0
         x = self.prob(x)
         return x
+
     # def forward(self, x):
     #     model_ip = x
 
@@ -200,7 +209,6 @@ class CostRegNet(nn.Module): #TODO: Modify this code to accept arguments for set
     #         print(str(e))
 
     #     return x
-
 
 
 class RefineNet(nn.Module):

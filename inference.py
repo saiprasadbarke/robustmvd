@@ -100,7 +100,6 @@ def write_pred(pred, output_path, h_orig, w_orig):
 
 @torch.no_grad()
 def run(args):
-
     if args.model is None:
         print(f"No model specified. Available models are: {', '.join(list_models())}")
         return

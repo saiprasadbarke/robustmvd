@@ -51,6 +51,7 @@ def copy_gt_depths(in_base, out_base):
             depth_out = osp.join(out_path, "{:08d}.pfm".format(idx))
             cp(depth_in, depth_out)
 
+
 def copy_gt_masks(in_base, out_base):
     in_base = osp.join(in_base, "dtu", "Depths_raw")
     scans = os.listdir(in_base)
@@ -69,12 +70,13 @@ def copy_gt_masks(in_base, out_base):
             depth_out = osp.join(out_path, "{:08d}.png".format(idx))
             cp(depth_in, depth_out)
 
+
 def copy_camera_params(in_base, out_base):
     pair_in = osp.join(in_base, "dtu", "Cameras_1", "pair.txt")
     in_path = osp.join(in_base, "dtu", "Cameras_1", "train")
     cameras = os.listdir(in_path)
     scans = os.listdir(out_base)
-    
+
     for scan in tqdm(scans, "Processed scans"):
         out_path = osp.join(out_base, scan)
         os.makedirs(out_path, exist_ok=True)
@@ -82,11 +84,12 @@ def copy_camera_params(in_base, out_base):
         pair_out = osp.join(out_path, "pair.txt")
         print(pair_in, pair_out)
         os.makedirs(out_path, exist_ok=True)
-        cp(pair_in, pair_out) 
+        cp(pair_in, pair_out)
         for camera in cameras:
             cam_in = osp.join(in_path, camera)
             cam_out = osp.join(out_path, camera)
             cp(cam_in, cam_out)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

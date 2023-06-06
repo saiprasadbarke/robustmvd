@@ -51,7 +51,9 @@ def put_scalar(name, scalar, step=None):
         step: step associated with scalar
     """
     scalar = float(scalar)
-    EVENT_STORAGE.append({"name": name, "write_type": EventType.SCALAR, "event": scalar, "step": step})
+    EVENT_STORAGE.append(
+        {"name": name, "write_type": EventType.SCALAR, "event": scalar, "step": step}
+    )
 
 
 def put_scalar_dict(name, scalar, step=None):
@@ -107,11 +109,28 @@ def put_tensor(name, tensor, step=None, filter=False, **kwargs):
     """
     if filter and not check_vis(tensor):
         return
-    
-    EVENT_STORAGE.append({"name": name, "write_type": EventType.TENSOR, "event": tensor, "step": step, "kwargs": kwargs})
+
+    EVENT_STORAGE.append(
+        {
+            "name": name,
+            "write_type": EventType.TENSOR,
+            "event": tensor,
+            "step": step,
+            "kwargs": kwargs,
+        }
+    )
 
 
-def put_tensor_list(name, tensor, step=None, every_nth=1, labels=None, max_to_log=None, filter=False, **kwargs):
+def put_tensor_list(
+    name,
+    tensor,
+    step=None,
+    every_nth=1,
+    labels=None,
+    max_to_log=None,
+    filter=False,
+    **kwargs,
+):
     """Setter function to place a list of tensors into the queue to be written out
 
     Args:
@@ -171,10 +190,14 @@ def put_histogram(name, values, step=None, replace_NaNs=False):
         values[~np.isfinite(values)] = 0
 
     values = values.reshape(-1)
-    EVENT_STORAGE.append({"name": name, "write_type": EventType.HISTOGRAM, "event": values, "step": step})
+    EVENT_STORAGE.append(
+        {"name": name, "write_type": EventType.HISTOGRAM, "event": values, "step": step}
+    )
 
 
-def put_time(name, duration, step=None, write=True, avg_over_steps=True, update_eta=False):
+def put_time(
+    name, duration, step=None, write=True, avg_over_steps=True, update_eta=False
+):
     """Setter function to place a time element into the queue to be written out.
     Processes the time info according to the options.
 
@@ -205,8 +228,8 @@ def put_time(name, duration, step=None, write=True, avg_over_steps=True, update_
     if update_eta and write:
         remain_iter = GLOBAL_BUFFER["max_iter"] - step
         remain_time = remain_iter * GLOBAL_BUFFER["events"][name]["avg"]
-        put_scalar("00_overview/eta_hours", remain_time/3600, step)
-        put_scalar("00_overview/eta_days", remain_time/(3600*24), step)
+        put_scalar("00_overview/eta_hours", remain_time / 3600, step)
+        put_scalar("00_overview/eta_days", remain_time / (3600 * 24), step)
 
 
 def write_out_storage():
@@ -215,21 +238,34 @@ def write_out_storage():
         for event in EVENT_STORAGE:
             write_func = getattr(writer, event["write_type"].value)
             if "kwargs" in event:
-                write_func(event["name"], event["event"], event["step"], **event["kwargs"])
+                write_func(
+                    event["name"], event["event"], event["step"], **event["kwargs"]
+                )
             else:
                 write_func(event["name"], event["event"], event["step"])
 
     EVENT_STORAGE.clear()
 
 
-def setup_writers(log_wandb, log_tensorboard, max_iterations=None, tensorboard_logs_dir=None, wandb_logs_dir=None, exp_id=None, config=None, comment=None):
+def setup_writers(
+    log_wandb,
+    log_tensorboard,
+    max_iterations=None,
+    tensorboard_logs_dir=None,
+    wandb_logs_dir=None,
+    exp_id=None,
+    config=None,
+    comment=None,
+):
     if max_iterations is not None:
         GLOBAL_BUFFER["max_iter"] = max_iterations
 
     if log_wandb:
         assert wandb_logs_dir is not None
         os.makedirs(wandb_logs_dir, exist_ok=True)
-        curr_writer = WandbWriter(log_dir=wandb_logs_dir, exp_id=exp_id, config=config, comment=comment)
+        curr_writer = WandbWriter(
+            log_dir=wandb_logs_dir, exp_id=exp_id, config=config, comment=comment
+        )
         EVENT_WRITERS.append(curr_writer)
     if log_tensorboard:
         assert tensorboard_logs_dir is not None
@@ -297,7 +333,15 @@ class WandbWriter(Writer):
     """WandDB Writer Class"""
 
     def __init__(self, log_dir, exp_id=None, config=None, comment=None):
-        wandb.init(project="robustmvd", dir=str(log_dir), reinit=True, resume=True, config=config, name=exp_id, notes=comment)
+        wandb.init(
+            project="robustmvd",
+            dir=str(log_dir),
+            reinit=True,
+            resume=True,
+            config=config,
+            name=exp_id,
+            notes=comment,
+        )
 
     def write_tensor(self, name, tensor, step, **kwargs):
         img = vis(tensor, **kwargs)
@@ -319,7 +363,11 @@ class TensorboardWriter(Writer):
 
     def write_tensor(self, name, tensor, step, **kwargs):
         filtered_kwargs = {k: v for k, v in kwargs.items() if k != "out_format"}
-        img = vis(tensor, out_format={'type': 'np', 'mode': 'RGB', 'dtype': 'uint8'}, **filtered_kwargs)
+        img = vis(
+            tensor,
+            out_format={"type": "np", "mode": "RGB", "dtype": "uint8"},
+            **filtered_kwargs,
+        )
         self.writer.add_image(name, img, step if step is not None else 0)
 
     def write_scalar(self, name, scalar, step):

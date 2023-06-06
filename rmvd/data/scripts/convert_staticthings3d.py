@@ -38,14 +38,14 @@ def link_file(in_path, out_path, split, seqtype, seq, dtype, cam, frame_num, ext
     p = osp.join(p, cam)
     os.makedirs(p, exist_ok=True)
 
-    p = osp.join(p, frame_num+"."+ext)
+    p = osp.join(p, frame_num + "." + ext)
     if not osp.isfile(p):
         print("Linking {} to {}".format(in_path, p))
         os.symlink(in_path, p)
 
 
 def link_images(in_path, out_path):
-    p = osp.join(in_path, 'frames_cleanpass')
+    p = osp.join(in_path, "frames_cleanpass")
     for split in os.listdir(p):
         p1 = osp.join(p, split)
         for seqtype in os.listdir(p1):
@@ -58,10 +58,19 @@ def link_images(in_path, out_path):
                         p5 = osp.join(p4, frame)
                         frame_num, ext = osp.splitext(frame)
                         frame_num = int(frame_num)
-                        link_file(in_path=p5, out_path=out_path, split=split, seqtype=seqtype, seq=seq,
-                                  dtype="frames_cleanpass", cam=cam, frame_num=frame_num, ext="png")
-                        
-    p = osp.join(in_path, 'frames_finalpass')
+                        link_file(
+                            in_path=p5,
+                            out_path=out_path,
+                            split=split,
+                            seqtype=seqtype,
+                            seq=seq,
+                            dtype="frames_cleanpass",
+                            cam=cam,
+                            frame_num=frame_num,
+                            ext="png",
+                        )
+
+    p = osp.join(in_path, "frames_finalpass")
     for split in os.listdir(p):
         p1 = osp.join(p, split)
         for seqtype in os.listdir(p1):
@@ -74,12 +83,21 @@ def link_images(in_path, out_path):
                         p5 = osp.join(p4, frame)
                         frame_num, ext = osp.splitext(frame)
                         frame_num = int(frame_num)
-                        link_file(in_path=p5, out_path=out_path, split=split, seqtype=seqtype, seq=seq,
-                                  dtype="frames_finalpass", cam=cam, frame_num=frame_num, ext="png")
-                        
-                        
+                        link_file(
+                            in_path=p5,
+                            out_path=out_path,
+                            split=split,
+                            seqtype=seqtype,
+                            seq=seq,
+                            dtype="frames_finalpass",
+                            cam=cam,
+                            frame_num=frame_num,
+                            ext="png",
+                        )
+
+
 def link_depths(in_path, out_path):
-    p = osp.join(in_path, 'depths')
+    p = osp.join(in_path, "depths")
     for split in os.listdir(p):
         p1 = osp.join(p, split)
         for seqtype in os.listdir(p1):
@@ -92,12 +110,21 @@ def link_depths(in_path, out_path):
                         p5 = osp.join(p4, frame)
                         frame_num, ext = osp.splitext(frame)
                         frame_num = int(frame_num)
-                        link_file(in_path=p5, out_path=out_path, split=split, seqtype=seqtype, seq=seq,
-                                  dtype="depths", cam=cam, frame_num=frame_num, ext="float3")
-                        
-                        
+                        link_file(
+                            in_path=p5,
+                            out_path=out_path,
+                            split=split,
+                            seqtype=seqtype,
+                            seq=seq,
+                            dtype="depths",
+                            cam=cam,
+                            frame_num=frame_num,
+                            ext="float3",
+                        )
+
+
 def link_poses(in_path, out_path):
-    p = osp.join(in_path, 'poses')
+    p = osp.join(in_path, "poses")
     for split in os.listdir(p):
         p1 = osp.join(p, split)
         for seqtype in os.listdir(p1):
@@ -110,32 +137,50 @@ def link_poses(in_path, out_path):
                         p5 = osp.join(p4, frame)
                         frame_num, ext = osp.splitext(frame)
                         frame_num = int(frame_num)
-                        link_file(in_path=p5, out_path=out_path, split=split, seqtype=seqtype, seq=seq,
-                                  dtype="poses", cam=cam, frame_num=frame_num, ext="float3")
-                        
-                        
+                        link_file(
+                            in_path=p5,
+                            out_path=out_path,
+                            split=split,
+                            seqtype=seqtype,
+                            seq=seq,
+                            dtype="poses",
+                            cam=cam,
+                            frame_num=frame_num,
+                            ext="float3",
+                        )
+
+
 def link_intrinsics(in_path, out_path):
-    p = osp.join(in_path, 'intrinsics')
+    p = osp.join(in_path, "intrinsics")
     for split in os.listdir(p):
         p1 = osp.join(p, split)
         for seqtype in os.listdir(p1):
             p2 = osp.join(p1, seqtype)
             for seq in os.listdir(p2):
                 p3 = osp.join(p2, seq)
-                for cam in ['left', 'right']:
+                for cam in ["left", "right"]:
                     p4 = p3
                     for frame in os.listdir(p4):
                         p5 = osp.join(p4, frame)
                         frame_num, ext = osp.splitext(frame)
                         frame_num = int(frame_num)
-                        link_file(in_path=p5, out_path=out_path, split=split, seqtype=seqtype, seq=seq,
-                                  dtype="intrinsics", cam=cam, frame_num=frame_num, ext="float3")
+                        link_file(
+                            in_path=p5,
+                            out_path=out_path,
+                            split=split,
+                            seqtype=seqtype,
+                            seq=seq,
+                            dtype="intrinsics",
+                            cam=cam,
+                            frame_num=frame_num,
+                            ext="float3",
+                        )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('in_path', type=str)
-    parser.add_argument('out_path', type=str)
+    parser.add_argument("in_path", type=str)
+    parser.add_argument("out_path", type=str)
     args = parser.parse_args()
 
     os.makedirs(args.out_path, exist_ok=True)

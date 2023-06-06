@@ -9,14 +9,17 @@ def adam(model, lr, **_):
     params = [p for p in model.parameters() if p.requires_grad]
     optim = torch.optim.Adam(params, lr=lr)
     return optim
-    
+
 
 @register_scheduler
 def flownet_scheduler(optimizer, **_):
     lr_intervals = [300000, 400000, 500000]
     gamma = 0.5
-    scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=lr_intervals, gamma=gamma)
+    scheduler = torch.optim.lr_scheduler.MultiStepLR(
+        optimizer, milestones=lr_intervals, gamma=gamma
+    )
     return scheduler
+
 
 # def setup_late_fusion_optimization(data):
 #     model_uncert = data['model_uncert']
