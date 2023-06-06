@@ -195,7 +195,8 @@ def vis(arr, **kwargs):
             return vis_2d_array(arr, **kwargs)
     else:
         raise ValueError(f"Can not visualize an array of shape {shape}.")
-
+    
+    
 def check_vis(arr):
 
     ndim = arr.ndim
@@ -212,7 +213,8 @@ def check_vis(arr):
             return True
     else:
         return False
-    
+
+
 def vis_2d_array(arr, full_batch=False, batch_labels=None, **kwargs):
     """
     Creates a visualization of a 2d numpy array or torch tensor.

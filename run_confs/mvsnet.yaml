@@ -1,0 +1,32 @@
+meta:
+  is_test: 0
+  number_of_runs: 1
+  run_name: mvsnet_blendedmvs
+  git_path: /home/schroepp/workspace/final/robustmvd
+  output_base_path: /home/schroepp/raid18/robustmvd_data/experiments/
+  comment: 'mvsnet model reimplementation with original settings: linear depth sampling, 128 sampling points, rmsprop, lr1e-3, blendedmvs.train_mvsnet, batch size 1.'
+
+target:
+  which: ssh
+  ssh:
+    connect_string: ssh -t ducky
+  torque:
+    ppn: 6
+    gpus: 1
+    mem: 32gb
+    nodes: 1
+    walltime: "24:00:00"
+    job_chain_length: 12
+
+runs:
+  - pre_commands:
+      - source /misc/software/cuda/add_environment_cuda11.1.sh
+      - source /home/schroepp/.virtualenvs/torch-1.9-20.04/bin/activate
+      - export CUDA_VISIBLE_DEVICES=0
+      - cp "/home/schroepp/workspace/final/robustmvd/rmvd/data/sample_lists/staticthings3d.robust_mvd.mvd.pickle" ./rmvd/data/sample_lists/staticthings3d.robust_mvd.mvd.pickle
+      - cp "/home/schroepp/workspace/final/robustmvd/rmvd/data/sample_lists/blendedmvs.robust_mvd.mvd.pickle" ./rmvd/data/sample_lists/blendedmvs.robust_mvd.mvd.pickle
+    run_commands:
+      - python train.py --training_type mvd --output %LOGDIR% --num_gpus 1 --batch_size 1 --max_iterations 10000 --model mvsnet_blendedmvs --inputs poses intrinsics depth_range --optimizer rmsprop --lr 1e-3 --scheduler mvsnet_scheduler --loss mvsnet_loss --dataset blendedmvs.train_mvsnet.mvd --augmentations mvsnet_augmentations --seed 42 --comment "%COMMENT%" --exp_id %RUNID%
+      - python eval.py --eval_type robustmvd --model mvsnet_blendedmvs --weights %LOGDIR%/weights_only_checkpoints_dir/snapshot-iter-$(printf %09d "10000").pt --inputs poses intrinsics depth_range --output %LOGDIR%/eval/snapshot-iter-$(printf %09d "10000").pt/known_depth_range --finished_iterations 10000 --log_dir %LOGDIR% --num_gpus 1 --eth3d_size 768 1152 --kitti_size 384 1280 --dtu_size 896 1216 --scannet_size 448 640 --tanks_and_temples_size 704 1280 --eval_uncertainty --seed 42 --comment "%COMMENT%" --exp_id %RUNID%
+      - python train.py --training_type mvd --output %LOGDIR% --num_gpus 1 --batch_size 1 --max_iterations 160000 --model mvsnet_blendedmvs --inputs poses intrinsics depth_range --optimizer rmsprop --lr 1e-3 --scheduler mvsnet_scheduler --loss mvsnet_loss --dataset blendedmvs.train_mvsnet.mvd --augmentations mvsnet_augmentations --seed 42 --comment "%COMMENT%" --exp_id %RUNID%
+      - python eval.py --eval_type robustmvd --model mvsnet_blendedmvs --weights %LOGDIR%/weights_only_checkpoints_dir/snapshot-iter-$(printf %09d "160000").pt --inputs poses intrinsics depth_range --output %LOGDIR%/eval/snapshot-iter-$(printf %09d "160000").pt/known_depth_range --finished_iterations 160000 --log_dir %LOGDIR% --num_gpus 1 --eth3d_size 768 1152 --kitti_size 384 1280 --dtu_size 896 1216 --scannet_size 448 640 --tanks_and_temples_size 704 1280 --eval_uncertainty --seed 42 --comment "%COMMENT%" --exp_id %RUNID%

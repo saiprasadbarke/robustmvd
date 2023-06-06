@@ -6,7 +6,7 @@ import os
 import os.path as osp
 
 from rmvd import create_model, list_models, create_dataset, create_compound_dataset, list_datasets, create_training, list_trainings, create_optimizer, list_optimizers, create_scheduler, list_schedulers, create_loss, list_losses, list_augmentations, list_batch_augmentations
-from rmvd.utils import set_random_seed, writer
+from rmvd.utils import set_random_seed, writer, logging
 
 
 def train(args):
@@ -14,41 +14,42 @@ def train(args):
     set_random_seed(args.seed)
 
     if args.model is None:
-        print(f"No model specified via --model. Available models are: {', '.join(list_models(trainable_only=True))}")
+        logging.info(f"No model specified via --model. Available models are: {', '.join(list_models(trainable_only=True))}")
         return
 
     if args.training_type is None:
-        print(f"No training type specified via --training_type. Available training types are: {', '.join(list_trainings())}")
+        logging.info(f"No training type specified via --training_type. Available training types are: {', '.join(list_trainings())}")
         return
     
     if args.augmentations is not None and args.augmentations_per_dataset is not None:
-        print("Error: --augmentations and --augmentations_per_dataset cannot be used together.")
+        logging.info("Error: --augmentations and --augmentations_per_dataset cannot be used together.")
         return
     
     if args.augmentations_per_dataset is not None and len(args.augmentations_per_dataset) != len(args.dataset):
-        print("Error: There must be as many --augmentations_per_dataset arguments as --dataset arguments.")
+        logging.info("Error: There must be as many --augmentations_per_dataset arguments as --dataset arguments.")
         return
 
     if args.dataset is None:  # or dataset not available
         datasets = list_datasets()
-        print(f"No dataset specified via --dataset. Available datasets are: {', '.join(datasets)}")
+        logging.info(f"No dataset specified via --dataset. Available datasets are: {', '.join(datasets)}")
         return
 
     if args.optimizer is None:
-        print(f"No optimizer specified via --optimizer. Available optimizers are: {', '.join(list_optimizers())}")
+        logging.info(f"No optimizer specified via --optimizer. Available optimizers are: {', '.join(list_optimizers())}")
         return
 
     if args.scheduler is None:
-        print(f"No scheduler specified. Available schedulers are: {', '.join(list_schedulers())}")
+        logging.info(f"No scheduler specified. Available schedulers are: {', '.join(list_schedulers())}")
         return
     
     if args.loss is None:
-        print(f"No loss specified. Available losses are: {', '.join(list_losses())}")
+        logging.info(f"No loss specified. Available losses are: {', '.join(list_losses())}")
         return
     
     out_dir = args.output
     tensorboard_logs_dir = osp.join(out_dir, "tensorboard_logs")
     wandb_logs_dir = osp.join(out_dir, "wandb_logs")
+    log_file_path = osp.join(out_dir, "log.txt")
     os.makedirs(out_dir, exist_ok=True)
     os.makedirs(tensorboard_logs_dir, exist_ok=True)
     os.makedirs(wandb_logs_dir, exist_ok=True)
@@ -58,10 +59,14 @@ def train(args):
                          tensorboard_logs_dir=tensorboard_logs_dir, 
                          wandb_logs_dir=wandb_logs_dir,
                          exp_id=args.exp_id,
-                         comment=args.comment,)  # TODO: config=CONFIG
+                         comment=args.comment,)
+    logging.add_log_file(log_file_path, flush_line=True)
 
-    print()
-    print(f"Training {args.model} model on the dataset {'+'.join(args.dataset)} in the {args.training_type} training setting.\n")
+    with open(osp.join(args.output, "cmd.txt"), 'a') as f:
+        f.write("python " + " ".join(sys.argv) + "\n")
+        
+    logging.info()
+    logging.info(f"Training {args.model} model on the dataset {'+'.join(args.dataset)} in the {args.training_type} training setting.\n")
     
     datasets = []
     for dataset_idx, dataset_name in enumerate(args.dataset):
@@ -94,10 +99,9 @@ def train(args):
                                log_full_batch=args.log_full_batch,
                                verbose=True,)
 
-    with open(osp.join(args.output, "cmd.txt"), 'a') as f:
-        f.write("python " + " ".join(sys.argv) + "\n")
-
     training()
+    
+    logging.remove_log_file(log_file_path)
 
 
 if __name__ == '__main__':
@@ -105,9 +109,10 @@ if __name__ == '__main__':
     parser.add_argument('--output', help="Path to folder for output data.", required=True)
     parser.add_argument('--num_gpus', type=int, help="Number of GPUs. 0 means use CPU. Default: use 1 GPU.", default=1)
     parser.add_argument('--seed', type=int, help="Random seed. Default: 42.", default=42)
+    parser.add_argument('--num_workers', type=int, help="Number of workers for data loading. Default: 8.", default=8)
+    
     parser.add_argument('--batch_size', type=int, required=True, help="Batch size.")
     parser.add_argument('--max_iterations', type=int, required=True, help="Maximum number of iterations to train.")
-    parser.add_argument('--num_workers', type=int, help="Number of workers for data loading. Default: 8.", default=8)
     parser.add_argument('--training_type', help=f"Training setting. Options are: {', '.join(list_trainings())}", required=True)
 
     parser.add_argument('--model', help=f"Model for evaluation. Available models "

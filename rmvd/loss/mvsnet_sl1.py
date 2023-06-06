@@ -6,7 +6,7 @@ from rmvd.loss.registry import register_loss
 
 @register_loss
 class SL1Loss(nn.Module):
-    def __init__(self, model=None): #TODO: ohem can be configured to true
+    def __init__(self, model=None):
         super().__init__()
         self.loss = nn.SmoothL1Loss(reduction='none')
         
@@ -22,8 +22,8 @@ class SL1Loss(nn.Module):
         masks =sample_inputs['masks'] if 'masks' in sample_inputs else targets > 0
         masks = masks.unsqueeze(1) if masks.dim() == 3 else masks
         #with torch.no_grad():
-        targets = F.interpolate(targets, size=inputs.shape[-2:], mode='bilinear', align_corners=True)
-        masks = F.interpolate(masks.float(), size=inputs.shape[-2:], mode='bilinear', align_corners=True)
+            targets = F.interpolate(targets, size=inputs.shape[-2:], mode='bilinear')
+            masks = F.interpolate(masks.float(), size=inputs.shape[-2:], mode='bilinear')
         masks = masks > 0
         loss = self.loss(inputs[masks], targets[masks])
 

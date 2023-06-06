@@ -32,14 +32,10 @@ class RobustMVD(nn.Module):
 
     def init_weights(self):
         for m in self.modules():
-            if (
-                isinstance(m, nn.Conv2d)
-                or isinstance(m, nn.ConvTranspose2d)
-                or isinstance(m, nn.Conv3d)
-                or isinstance(m, nn.ConvTranspose3d)
-            ):
+            if isinstance(m, nn.Conv2d) or isinstance(m, nn.ConvTranspose2d) or isinstance(m, nn.Conv3d) or isinstance(
+                    m, nn.ConvTranspose3d):
                 if m.weight is not None:
-                    nn.init.kaiming_normal_(m.weight, a=0.2, nonlinearity="leaky_relu")
+                    nn.init.kaiming_normal_(m.weight, a=0.2, nonlinearity='leaky_relu')
                 if m.bias is not None:
                     nn.init.zeros_(m.bias)
             elif isinstance(m, nn.BatchNorm2d) or isinstance(m, nn.BatchNorm3d):
@@ -49,6 +45,7 @@ class RobustMVD(nn.Module):
                     nn.init.zeros_(m.bias)
 
     def forward(self, images, poses, intrinsics, keyview_idx, **_):
+
         image_key = select_by_index(images, keyview_idx)
         images_source = exclude_index(images, keyview_idx)
 
@@ -62,40 +59,32 @@ class RobustMVD(nn.Module):
 
         ctx = self.context_encoder(enc_key)
 
-        corrs, masks = self.corr_block(
-            feat_key=enc_key,
-            intrinsics_key=intrinsics_key,
-            feat_sources=enc_sources,
-            source_to_key_transforms=source_to_key_transforms,
-            intrinsics_sources=intrinsics_source,
-        )
+        corrs, masks, _ = self.corr_block(feat_key=enc_key, intrinsics_key=intrinsics_key, feat_sources=enc_sources, 
+                                          source_to_key_transforms=source_to_key_transforms,
+                                          intrinsics_sources=intrinsics_source, 
+                                          num_sampling_points=256, min_depth=0.4, max_depth=1000.)
 
-        fused_corr, fused_mask = self.fusion_block(corrs=corrs, masks=masks)
+        fused_corr, _ = self.fusion_block(corrs=corrs, masks=masks)
 
         all_enc_fused, enc_fused = self.fusion_enc_block(corr=fused_corr, ctx=ctx)
 
-        dec = self.decoder(
-            enc_fused=enc_fused, all_enc={**all_enc_key, **all_enc_fused}
-        )
+        dec = self.decoder(enc_fused=enc_fused, all_enc={**all_enc_key, **all_enc_fused})
 
         pred = {
-            "depth": 1 / (dec["invdepth"] + 1e-9),
-            "depth_uncertainty": torch.exp(dec["invdepth_log_b"])
-            / (dec["invdepth"] + 1e-9),
+            'depth': 1 / (dec['invdepth'] + 1e-9),
+            'depth_uncertainty': torch.exp(dec['invdepth_log_b']) / (dec['invdepth'] + 1e-9)
         }
         aux = dec
+        aux['depth'] = pred['depth']
+        aux['depth_uncertainty'] = pred['depth_uncertainty']
 
         return pred, aux
 
-    def input_adapter(
-        self, images, keyview_idx, poses=None, intrinsics=None, depth_range=None
-    ):
+    def input_adapter(self, images, keyview_idx, poses, intrinsics, **_):
         device = get_torch_model_device(self)
 
         orig_ht, orig_wd = images[0].shape[-2:]
-        ht, wd = int(math.ceil(orig_ht / 64.0) * 64.0), int(
-            math.ceil(orig_wd / 64.0) * 64.0
-        )
+        ht, wd = int(math.ceil(orig_ht / 64.0) * 64.0), int(math.ceil(orig_wd / 64.0) * 64.0)
         if (orig_ht != ht) or (orig_wd != wd):
             resized = ResizeInputs(size=(ht, wd))({'images': images, 'intrinsics': intrinsics})
             images = resized['images']
@@ -105,19 +94,17 @@ class RobustMVD(nn.Module):
         images = [image / 255.0 - 0.4 for image in images]
 
         # model works with relative intrinsics:
-        scale_arr = np.array([[wd] * 3, [ht] * 3, [1.0] * 3], dtype=np.float32)  # 3, 3
+        scale_arr = np.array([[wd]*3, [ht]*3, [1.]*3], dtype=np.float32)  # 3, 3
         intrinsics = [intrinsic / scale_arr for intrinsic in intrinsics]
 
-        images, keyview_idx, poses, intrinsics, depth_range = to_torch(
-            (images, keyview_idx, poses, intrinsics, depth_range), device=device
-        )
+        images, keyview_idx, poses, intrinsics = \
+            to_torch((images, keyview_idx, poses, intrinsics), device=device)
 
         sample = {
-            "images": images,
-            "keyview_idx": keyview_idx,
-            "poses": poses,
-            "intrinsics": intrinsics,
-            "depth_range": depth_range,
+            'images': images,
+            'keyview_idx': keyview_idx,
+            'poses': poses,
+            'intrinsics': intrinsics,
         }
         return sample
 
@@ -128,21 +115,15 @@ class RobustMVD(nn.Module):
 
 @register_model(trainable=False)
 def robust_mvd_5M(pretrained=True, weights=None, train=False, num_gpus=1, **kwargs):
-    pretrained_weights = (
-        "https://lmb.informatik.uni-freiburg.de/people/schroepp/weights/robustmvd.pt"
-    )
+    pretrained_weights = 'https://lmb.informatik.uni-freiburg.de/people/schroepp/weights/robustmvd.pt'
     weights = pretrained_weights if (pretrained and weights is None) else None
-    model = build_model_with_cfg(
-        model_cls=RobustMVD, weights=weights, train=train, num_gpus=num_gpus
-    )
+    model = build_model_with_cfg(model_cls=RobustMVD, weights=weights, train=train, num_gpus=num_gpus)
     return model
 
 
 @register_model
 def robust_mvd(pretrained=True, weights=None, train=False, num_gpus=1, **kwargs):
-    pretrained_weights = "https://lmb.informatik.uni-freiburg.de/people/schroepp/weights/robustmvd_600k.pt"
-    weights = pretrained_weights if (pretrained and weights is None) else None
-    model = build_model_with_cfg(
-        model_cls=RobustMVD, weights=weights, train=train, num_gpus=num_gpus
-    )
+    pretrained_weights = 'https://lmb.informatik.uni-freiburg.de/people/schroepp/weights/robustmvd_600k.pt'
+    weights = pretrained_weights if (pretrained and weights is None) else weights
+    model = build_model_with_cfg(model_cls=RobustMVD, weights=weights, train=train, num_gpus=num_gpus)
     return model

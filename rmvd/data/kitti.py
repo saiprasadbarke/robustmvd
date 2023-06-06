@@ -97,3 +97,22 @@ class KITTIEigenDenseDepthTest(Dataset):
         layouts = default_layouts + layouts if layouts is not None else default_layouts
 
         super().__init__(root=root, layouts=layouts, **kwargs)
+                
+
+@register_dataset   
+class KITTIEigenDenseDepthTrain(Dataset):
+
+    base_dataset = 'kitti'
+    split = 'eigen_dense_depth_train'
+    dataset_type = 'mvd'
+
+    def __init__(self, root=None, layouts=None, **kwargs):
+        root = root if root is not None else self._get_path("kitti", "root")
+
+        default_layouts = [
+            MVDSequentialDefaultLayout("default", num_views=1, keyview_idx=0),
+            AllImagesLayout("all_images", num_views=1),
+        ]
+        layouts = default_layouts + layouts if layouts is not None else default_layouts
+
+        super().__init__(root=root, layouts=layouts, **kwargs)

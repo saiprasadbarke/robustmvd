@@ -1,0 +1,30 @@
+meta:
+  is_test: 0
+  number_of_runs: 1
+  run_name: robust_mvd
+  git_path: /home/schroepp/workspace/final/robustmvd
+  output_base_path: /home/schroepp/raid18/robustmvd_data/experiments/
+  comment: 'robust_mvd model with the original settings as described in the paper.'
+
+target:
+  which: ssh
+  ssh:
+    connect_string: ssh -t ducky
+  torque:
+    ppn: 6
+    gpus: 1
+    mem: 32gb
+    nodes: 1
+    walltime: "24:00:00"
+    job_chain_length: 12
+
+runs:
+  - pre_commands:
+      - source /misc/software/cuda/add_environment_cuda11.1.sh
+      - source /home/schroepp/.virtualenvs/torch-1.9-20.04/bin/activate
+      - export CUDA_VISIBLE_DEVICES=0
+      - cp "/home/schroepp/workspace/final/robustmvd/rmvd/data/sample_lists/staticthings3d.robust_mvd.mvd.pickle" ./rmvd/data/sample_lists/staticthings3d.robust_mvd.mvd.pickle
+      - cp "/home/schroepp/workspace/final/robustmvd/rmvd/data/sample_lists/blendedmvs.robust_mvd.mvd.pickle" ./rmvd/data/sample_lists/blendedmvs.robust_mvd.mvd.pickle
+    run_commands:
+      - python train.py --training_type mvd --output %LOGDIR% --num_gpus 1 --batch_size 4 --max_iterations 600000 --model robust_mvd --inputs poses intrinsics --optimizer adam --lr 1e-4 --grad_clip_max_norm 5 --scheduler flownet_scheduler --loss robust_mvd_loss --dataset staticthings3d.robust_mvd.mvd --dataset blendedmvs.robust_mvd.mvd --augmentations_per_dataset robust_mvd_augmentations_staticthings3d --augmentations_per_dataset robust_mvd_augmentations_blendedmvs --batch_augmentations robust_mvd_batch_augmentations --seed 42 --wandb --comment "%COMMENT%" --wandb --exp_id %RUNID%
+      - python eval.py --eval_type robustmvd --model robust_mvd --weights %LOGDIR%/weights_only_checkpoints_dir/snapshot-iter-$(printf %09d "600000").pt --inputs poses intrinsics --output %LOGDIR%/eval/snapshot-iter-$(printf %09d "600000").pt --finished_iterations 600000 --log_dir %LOGDIR% --num_gpus 1 --eth3d_size 768 1152 --kitti_size 384 1280 --dtu_size 896 1216 --scannet_size 448 640 --tanks_and_temples_size 704 1280 --eval_uncertainty --seed 42 --wandb --comment "%COMMENT%" --wandb --exp_id %RUNID%

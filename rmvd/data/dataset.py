@@ -27,7 +27,7 @@ class Dataset(torch.utils.data.Dataset, metaclass=abc.ABCMeta):
                  layouts=None, verbose=True, **kwargs):
 
         augmentations = [] if augmentations is None else augmentations
-        augmentations = [augmentations] if not isinstance(augmentations, list) else augmentations
+        augmentations = augmentations if isinstance(augmentations, list) else [augmentations]
         self.verbose = verbose
 
         self.root = None
@@ -53,7 +53,7 @@ class Dataset(torch.utils.data.Dataset, metaclass=abc.ABCMeta):
 
         if self.verbose:
             print(f"\tNumber of samples: {len(self)}")
-            if len(self.updates) > 0:
+            if self.updates:
                 print(f"\tUpdates: {', '.join([update.name for update in self.updates])}")
             if self.input_resize is not None:
                 print(f"\tImage resolution (height, width): ({input_size[0]}, {input_size[1]})")
@@ -102,7 +102,7 @@ class Dataset(torch.utils.data.Dataset, metaclass=abc.ABCMeta):
     def _init_samples_from_list(self):
         sample_list_path = _get_sample_list_path(self.name)
         if self.verbose:
-            print("\tInitializing samples from list at {}".format(sample_list_path))
+            print(f"\tInitializing samples from list at {sample_list_path}")
         with open(sample_list_path, 'rb') as sample_list:
             self.samples = pickle.load(sample_list)
 
@@ -319,7 +319,7 @@ class Dataset(torch.utils.data.Dataset, metaclass=abc.ABCMeta):
         return dataset_cls(**config)
 
 
-def _get_paths():
+def _get_paths(): # replace this from the internal repo
     paths_file = osp.join(osp.dirname(osp.realpath(__file__)), "paths.toml")
     with open(paths_file, "r") as paths_file:
         return pytoml.load(paths_file)

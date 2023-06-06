@@ -311,11 +311,12 @@ def exclude_index(l, exclude_idx):
         for batch_idx, exclude_idx in enumerate(exclude_indices):
             ret.append([ele[batch_idx] for idx, ele in enumerate(l) if idx != exclude_idx])
 
-        transposed = list(zip(*ret))
-        if isinstance(transposed[0][0], np.ndarray):
-            ret = [np.stack(ele, 0) for ele in transposed]
-        else:
-            ret = [torch.stack(ele, 0) for ele in transposed]
+        if len(ret) > 0 and all([len(ele) > 0 for ele in ret]):
+            transposed = list(zip(*ret))
+            if isinstance(transposed[0][0], np.ndarray):
+                ret = [np.stack(ele, 0) for ele in transposed]
+            else:
+                ret = [torch.stack(ele, 0) for ele in transposed]
 
     return ret
 

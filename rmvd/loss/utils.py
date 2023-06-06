@@ -1,4 +1,3 @@
-from typing import List
 import torch
 
 
@@ -90,11 +89,3 @@ def pointwise_univariate_laplace_nll(gt, pred_a, pred_log_b, mask=None, weight=N
         pointwise_nll *= weight
 
     return pointwise_nll
-
-
-################### Utils for vismvsnet ###################
-def bin_op_reduce(lst: List, func):
-    result = lst[0]
-    for i in range(1, len(lst)):
-        result = func(result, lst[i])
-    return result

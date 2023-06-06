@@ -12,6 +12,7 @@ from .dataset import Dataset, Sample, _get_sample_list_path
 from .registry import register_default_dataset
 from .layouts import MVDUnstructuredDefaultLayout, AllImagesLayout
 from .flyingthings3d import SUBSET_FILTERED_SAMPLES, HARD_SAMPLES
+from rmvd.utils import logging
 
 
 def readFloat(name):
@@ -210,11 +211,11 @@ class StaticThings3D(Dataset):
         path = _get_sample_list_path(self.name) if path is None else path
         if osp.isdir(osp.split(path)[0]):
             if self.verbose:
-                print(f"Writing sample list to {path}")
+                logging.info(f"Writing sample list to {path}")
             with open(path, 'wb') as file:
                 pickle.dump(self.samples, file)
         elif self.verbose:
-            print(f"Could not write sample list to {path}")
+            logging.info(f"Could not write sample list to {path}")
 
 
 @register_default_dataset

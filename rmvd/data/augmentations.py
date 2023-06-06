@@ -1,6 +1,6 @@
 import torchvision.transforms
 from .registry import register_augmentation
-from .transforms import ResizeInputs, ResizeTargets, ColorJitter, Eraser, NormalizeImagesToMinMax, MaskDepth, SpatialAugmentation, NormalizeIntrinsics
+from .transforms import ResizeInputs, ResizeTargets, ColorJitter, Eraser, NormalizeImagesToMinMax, MaskDepthByMinMax, SpatialAugmentation, NormalizeIntrinsics, NormalizeImagesByShiftAndScale
 
 
 @register_augmentation
@@ -11,10 +11,9 @@ def robust_mvd_augmentations_staticthings3d(**kwargs):
         NormalizeImagesToMinMax(min_val=-0.4, max_val=0.6),
         NormalizeIntrinsics(),
         Eraser(bounds=[250, 500], p=0.6),
-        MaskDepth(min_depth=1/2.75, max_depth=1/0.009),
+        MaskDepthByMinMax(min_depth=1/2.75, max_depth=1/0.009),
     ]
-    transform = torchvision.transforms.Compose(transforms)
-    return transform
+    return torchvision.transforms.Compose(transforms)
 
 
 @register_augmentation
@@ -28,5 +27,27 @@ def robust_mvd_augmentations_blendedmvs(**kwargs):
         Eraser(bounds=[250, 500], p=0.6),
         # intentionally not masking depth
     ]
-    transform = torchvision.transforms.Compose(transforms)
-    return transform
+    return torchvision.transforms.Compose(transforms)
+
+@register_augmentation
+def supervised_monodepth2_augmentations(**kwargs):
+    transforms = [
+        ResizeInputs(size=(384, 1280)),
+        ResizeTargets(size=(384, 1280)),
+        NormalizeImagesToMinMax(min_val=0., max_val=1.),
+        NormalizeImagesByShiftAndScale(shift=[0.485, 0.456, 0.406], scale=[0.229, 0.224, 0.225]),
+    ]
+    return torchvision.transforms.Compose(transforms)m
+
+
+@register_augmentation
+def mvsnet_augmentations(**kwargs):
+    transforms = [
+        ColorJitter(saturation=(0.3, 1.5), contrast=(0.3, 1.5), brightness=(0.8, 1.2), hue=0.1),
+        ResizeInputs(size=(576, 768)),
+        ResizeTargets(size=(576, 768)),
+        NormalizeImagesToMinMax(min_val=0., max_val=1.),
+        NormalizeImagesByShiftAndScale(shift=[0.485, 0.456, 0.406], scale=[0.229, 0.224, 0.225]),
+        NormalizeIntrinsics(),
+    ]
+    return torchvision.transforms.Compose(transforms)

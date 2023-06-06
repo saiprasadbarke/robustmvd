@@ -2,6 +2,8 @@ import os.path as osp
 import abc
 import pickle
 
+from rmvd.utils import logging
+
 
 class Update(metaclass=abc.ABCMeta):    
     def __init__(self):
@@ -18,7 +20,7 @@ class Updates:
         self.verbose = verbose
 
         if self.verbose:
-            print(f"Initializing dataset updates {self.name}.")
+            logging.info(f"Initializing dataset updates {self.name}.")
 
         self.root = root
         self.prefix = prefix
@@ -29,11 +31,11 @@ class Updates:
 
         if self.verbose:
             if self.root is not None:
-                print(f"\tData root: {self.root}")
-            print(f"\tPrefix: {self.prefix}")
-            print(f"\tPostfix: {self.postfix}")
-            print(f"\tNumber of updates: {len(self)}")
-            print(f"Finished initializing dataset update {self.name}.")
+                logging.info(f"\tData root: {self.root}")
+            logging.info(f"\tPrefix: {self.prefix}")
+            logging.info(f"\tPostfix: {self.postfix}")
+            logging.info(f"\tNumber of updates: {len(self)}")
+            logging.info(f"Finished initializing dataset update {self.name}.")
 
     @abc.abstractmethod
     def _init_updates(self):
