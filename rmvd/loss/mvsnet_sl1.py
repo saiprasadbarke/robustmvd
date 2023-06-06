@@ -22,10 +22,10 @@ class SL1Loss(nn.Module):
         masks = sample_inputs["masks"] if "masks" in sample_inputs else targets > 0
         masks = masks.unsqueeze(1) if masks.dim() == 3 else masks
         with torch.no_grad():
-            targets = F.interpolate(targets, size=inputs.shape[-2:], mode="bilinear")
-            masks = F.interpolate(
-                masks.float(), size=inputs.shape[-2:], mode="bilinear"
+            targets = F.interpolate(
+                targets, size=inputs.shape[-2:], mode="bilinear", align_corners=False
             )
+            masks = F.interpolate(masks.float(), size=inputs.shape[-2:], mode="nearest")
         masks = masks > 0
         loss = self.loss(inputs[masks], targets[masks])
 

@@ -1,8 +1,8 @@
 # Standard Imports
+from typing import List
 
 # Local Imports
 from .registry import register_loss
-from .utils import bin_op_reduce
 
 # External Libraries
 import torch
@@ -211,3 +211,10 @@ class VismvnsetMultiscaleMultiviewAggregate(nn.Module):  # TODO
 
         # return loss, pair_loss, less1, less3, l1, stats, abs_err_scaled, valid
         return loss, {}, {}
+
+
+def bin_op_reduce(lst: List, func):
+    result = lst[0]
+    for i in range(1, len(lst)):
+        result = func(result, lst[i])
+    return result

@@ -11,6 +11,13 @@ def adam(model, lr, **_):
     return optim
 
 
+@register_optimizer
+def rmsprop(model, lr, **_):
+    params = [p for p in model.parameters() if p.requires_grad]
+    optim = torch.optim.RMSprop(params, lr=lr, alpha=0.9)
+    return optim
+
+
 @register_scheduler
 def flownet_scheduler(optimizer, **_):
     lr_intervals = [300000, 400000, 500000]
@@ -18,6 +25,15 @@ def flownet_scheduler(optimizer, **_):
     scheduler = torch.optim.lr_scheduler.MultiStepLR(
         optimizer, milestones=lr_intervals, gamma=gamma
     )
+    return scheduler
+
+
+@register_scheduler
+def mvsnet_scheduler(optimizer, **_):
+    # each 10k decay with factor 0.9 -> gamma = 0.9**(1/10000)
+    gamma = 0.9999894640039382
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=gamma)
+    # TODO: try exponential decay LR
     return scheduler
 
 
