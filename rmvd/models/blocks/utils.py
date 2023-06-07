@@ -294,11 +294,6 @@ def homo_warp(
 def depth_regression(
     p, depth_values
 ):  # This is reused inthe implementation for cvp_mvsnet
-    # p: probability volume [B, D, H, W]
-    # depth_values: discrete depth values [B, D]
-    # print(f"Min p: {p.min()}, Max p: {p.max()}")
-    # print(f"Min prob sum: {p.sum(dim=1).min()}, Max prob sum: {p.sum(dim=1).max()}")
     depth_values = depth_values.view(*depth_values.shape, 1, 1)
     depth = torch.sum(p * depth_values, 1)
-    # print(f"Min depth: {depth.min()}, Max depth: {depth.max()}")
     return depth

@@ -177,7 +177,7 @@ def load_image(root, path):
     """This function loads an image from disk and returns it as a numpy array"""
     path = f"images/rect_{path[0]:03d}_{path[1]}_r5000.png"
     img_path = osp.join(root, path)
-    img = np.array(Image.open(img_path)) / 255  # H,W,3 ; dtype np.uint8
+    img = np.array(Image.open(img_path))  # H,W,3 ; dtype np.uint8
     img = img.transpose(2, 0, 1).astype(np.float32)  # 3,H,W ; dtype np.uint8
     return img
 
