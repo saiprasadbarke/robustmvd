@@ -70,6 +70,5 @@ def mvsnet_sai_augmentations(**kwargs):
         ColorJitter(saturation=(0.3, 1.5), contrast=(0.3, 1.5), brightness=(0.8, 1.2), hue=0.1),
         ResizeInputs(size=(576, 768)),
         NormalizeImagesToMinMax(min_val=0.0, max_val=1.0),
-        NormalizeImagesByShiftAndScale(shift=[0.485, 0.456, 0.406], scale=[0.229, 0.224, 0.225]),
     ]
     return torchvision.transforms.Compose(transforms)
