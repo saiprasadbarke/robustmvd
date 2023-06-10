@@ -83,8 +83,8 @@ def mvsnet_augmentations(**kwargs):
 @register_augmentation
 def mvsnet_sai_augmentations(**kwargs):
     transforms = [
-        ColorJitter(saturation=(0.3, 1.5), contrast=(0.3, 1.5), brightness=(0.8, 1.2), hue=0.1),
-        ResizeInputs(size=(576, 768)),
+        ResizeInputs(size=(512, 640)),
+        ResizeTargets(size=(512, 640)),
         NormalizeImagesToMinMax(min_val=0.0, max_val=1.0),
     ]
     return torchvision.transforms.Compose(transforms)

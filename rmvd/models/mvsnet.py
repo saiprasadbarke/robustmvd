@@ -42,16 +42,9 @@ class MVSNet(nn.Module):
         # Create the depth samples from the minimum and maximum depth. If no depth range is provided, use the default range [0.2,100]
         if depth_range is None:
             if self.sample_in_inv_depth_space:
-                depth_samples = (
-                    1
-                    / torch.linspace(
-                        1 / 100, 1 / 0.2, self.num_sampling_steps, dtype=torch.float32
-                    )[::-1]
-                )
+                depth_samples = 1 / torch.linspace(1 / 100, 1 / 0.2, self.num_sampling_steps, dtype=torch.float32)[::-1]
             else:
-                depth_samples = torch.linspace(
-                    0.2, 100, self.num_sampling_steps, dtype=torch.float32
-                )
+                depth_samples = torch.linspace(0.2, 100, self.num_sampling_steps, dtype=torch.float32)
         else:
             min_depth, max_depth = depth_range
             if self.sample_in_inv_depth_space:
@@ -77,15 +70,9 @@ class MVSNet(nn.Module):
         proj_mats = []
         for idx, (intrinsic_batch, pose_batch) in enumerate(zip(intrinsics, poses)):
             proj_mat_batch = []
-            for intrinsic, pose, cur_keyview_idx in zip(
-                intrinsic_batch, pose_batch, keyview_idx
-            ):
-                scale_arr = torch.tensor(
-                    [[0.25] * 3, [0.25] * 3, [1.0] * 3], device=intrinsic.device
-                )  # 3, 3
-                intrinsic = (
-                    intrinsic * scale_arr
-                )  # scale intrinsics to 4x downsampling that happens within the model
+            for intrinsic, pose, cur_keyview_idx in zip(intrinsic_batch, pose_batch, keyview_idx):
+                scale_arr = torch.tensor([[0.25] * 3, [0.25] * 3, [1.0] * 3], device=intrinsic.device)  # 3, 3
+                intrinsic = intrinsic * scale_arr  # scale intrinsics to 4x downsampling that happens within the model
 
                 proj_mat = pose
                 proj_mat[:3, :4] = torch.matmul(intrinsic, proj_mat[:3, :4])
@@ -164,11 +151,7 @@ class MVSNet(nn.Module):
                 torch.arange(D, device=prob_volume.device, dtype=prob_volume.dtype),
             ).long()  # (B, h, w)
 
-            confidence = torch.gather(
-                prob_volume_sum4, 1, depth_index.unsqueeze(1)
-            ).squeeze(
-                1
-            )  # (B, h, w)
+            confidence = torch.gather(prob_volume_sum4, 1, depth_index.unsqueeze(1)).squeeze(1)  # (B, h, w)
 
         pred_depth_uncertainty = 1 - confidence
 
@@ -225,44 +208,12 @@ class MVSNet(nn.Module):
 
 @register_model(trainable=False)
 def mvsnet_train(pretrained=True, weights=None, train=False, num_gpus=1, **kwargs):
-    # assert pretrained and (
-    #     weights is None
-    # ), "Model supports only pretrained=True, weights=None."
-    cfg = {"sample_in_inv_depth_space": False, "num_sampling_steps": 192}
+    assert pretrained and (weights is None), "Model supports only pretrained=True, weights=None."
+    cfg = {"sample_in_inv_depth_space": False, "num_sampling_steps": 256}
     model = build_model_with_cfg(
         model_cls=MVSNet,
         cfg=cfg,
         weights=None,
-        train=train,
-        num_gpus=num_gpus,
-    )
-    return model
-
-
-@register_model(trainable=False)
-def mvsnet_dtu_test(pretrained=True, weights=None, train=False, num_gpus=1, **kwargs):
-    pretrained_weights = "/misc/lmbraid19/barkes/robustmvd/training/mvsnet/debug_run/checkpoints/snapshot-iter-000082883.pt"
-    weights = pretrained_weights if (pretrained and weights is None) else None
-    cfg = {"sample_in_inv_depth_space": False, "num_sampling_steps": 192}
-    model = build_model_with_cfg(
-        model_cls=MVSNet,
-        cfg=cfg,
-        weights=pretrained_weights,
-        train=train,
-        num_gpus=num_gpus,
-    )
-    return model
-
-
-@register_model(trainable=False)
-def mvsnet_bmvs_test(pretrained=True, weights=None, train=False, num_gpus=1, **kwargs):
-    pretrained_weights = "/misc/lmbraid19/barkes/robustmvd/training/mvsnet/debug_blendedmvs/checkpoints/snapshot-iter-000129930.pt"
-    weights = pretrained_weights if (pretrained and weights is None) else None
-    cfg = {"sample_in_inv_depth_space": False, "num_sampling_steps": 192}
-    model = build_model_with_cfg(
-        model_cls=MVSNet,
-        cfg=cfg,
-        weights=pretrained_weights,
         train=train,
         num_gpus=num_gpus,
     )
