@@ -15,15 +15,9 @@ class Histogram:
         self.exclude_inf = exclude_inf
 
         if not logarithmic_bin_sizes:
-            self.bins = list(
-                np.histogram_bin_edges(
-                    np.random.random(10), bins=num_bins, range=(range[0], range[1])
-                )
-            )
+            self.bins = list(np.histogram_bin_edges(np.random.random(10), bins=num_bins, range=(range[0], range[1])))
         else:
-            self.bins = list(
-                np.logspace(np.log10(range[0]), np.log10(range[1]), num_bins + 1)
-            )
+            self.bins = list(np.logspace(np.log10(range[0]), np.log10(range[1]), num_bins + 1))
         self.bins = [-np.inf] + self.bins + [np.inf] if not exclude_inf else self.bins
 
         self.counts = np.zeros(len(self.bins) - 1, dtype=np.int64)
@@ -37,12 +31,8 @@ class Histogram:
     @property
     def bin_centers(self):
         bins = self.bins[1:-1] if not self.exclude_inf else self.bins
-        bin_centers = [
-            bins[i] + (bins[i + 1] - bins[i]) / 2.0 for i in range(len(bins) - 1)
-        ]
-        bin_centers = (
-            [-np.inf] + bin_centers + [np.inf] if not self.exclude_inf else bin_centers
-        )
+        bin_centers = [bins[i] + (bins[i + 1] - bins[i]) / 2.0 for i in range(len(bins) - 1)]
+        bin_centers = [-np.inf] + bin_centers + [np.inf] if not self.exclude_inf else bin_centers
         return bin_centers
 
     @property
@@ -54,9 +44,7 @@ class Scale3DEqualizedBatch:
     def __init__(self, p, min_depth, max_depth):
         self.__p = p
         self.__counter = 0
-        self.depth_histogram = Histogram(
-            range=(min_depth, max_depth), num_bins=100, logarithmic_bin_sizes=True
-        )
+        self.depth_histogram = Histogram(range=(min_depth, max_depth), num_bins=100, logarithmic_bin_sizes=True)
 
     def __call__(self, sample):
         poses = sample["poses"]
@@ -76,9 +64,7 @@ class Scale3DEqualizedBatch:
                 else:
                     bin_val = np.random.uniform(bin_min, bin_max)
 
-                depths = torch.split(
-                    depth, [1] * depth.shape[0]
-                )  # tuple of len N with depths of shape 1, 1, H, W
+                depths = torch.split(depth, [1] * depth.shape[0])  # tuple of len N with depths of shape 1, 1, H, W
                 depth_masks = torch.split(depth_mask, [1] * depth_mask.shape[0])
                 scale_factors = []
 
@@ -86,13 +72,9 @@ class Scale3DEqualizedBatch:
                     masked_depth_sample = depth_sample[depth_mask_sample.bool()]
                     if len(masked_depth_sample) > 0:
                         scale_factor = bin_val / torch.median(masked_depth_sample)
-                        scale_factor = torch.nan_to_num(
-                            scale_factor, nan=1.0, posinf=1.0, neginf=1.0
-                        )
+                        scale_factor = torch.nan_to_num(scale_factor, nan=1.0, posinf=1.0, neginf=1.0)
                     else:
-                        scale_factor = torch.tensor(
-                            1, dtype=depth_sample.dtype, device=depth_sample.device
-                        )
+                        scale_factor = torch.tensor(1, dtype=depth_sample.dtype, device=depth_sample.device)
                     scale_factors.append(scale_factor)
 
                 scale_factor = torch.stack(scale_factors)
@@ -118,7 +100,7 @@ class Scale3DEqualizedBatch:
         return sample
 
 
-class MaskDepth:
+class MaskDepthByMinMax:
     def __init__(self, min_depth, max_depth):
         self.__min_depth = min_depth
         self.__max_depth = max_depth
@@ -126,9 +108,7 @@ class MaskDepth:
     def __call__(self, sample):
         depth = sample["depth"]
         invdepth = sample["invdepth"]
-        mask = ((depth >= self.__min_depth) & (depth <= self.__max_depth)).to(
-            torch.float32
-        )
+        mask = ((depth >= self.__min_depth) & (depth <= self.__max_depth)).to(torch.float32)
         depth = depth * mask
         invdepth = invdepth * mask
         depth_range = compute_depth_range(depth=depth)

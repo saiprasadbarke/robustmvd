@@ -207,9 +207,7 @@ def load_intrinsics(root, path):
     pose_path = osp.join(root, path)
     with open(pose_path) as pose_file:
         intrinsic_lines = [x[:-1] for x in pose_file.readlines()][7:10]
-        intrinsic_elements = [
-            float(x) for line in intrinsic_lines for x in line.split()
-        ]
+        intrinsic_elements = [float(x) for line in intrinsic_lines for x in line.split()]
         intrinsic_matrix = np.array(
             [
                 intrinsic_elements[:3],
@@ -225,9 +223,7 @@ def load_depth(root, path):
     """This function loads rendered depth maps from a file on the disk and returns it as a numpy array"""
     path = f"gt_depths/{path:08d}.pfm"
     depth = readPFM(osp.join(root, path))
-    depth = np.nan_to_num(
-        depth, posinf=0.0, neginf=0.0, nan=0.0
-    )  # Replace NaNs with 0.0
+    depth = np.nan_to_num(depth, posinf=0.0, neginf=0.0, nan=0.0)  # Replace NaNs with 0.0
     depth = np.expand_dims(depth, 0).astype(np.float32)  # (1,H,W)
     return depth  # 1, H, W, np.float32
 
@@ -270,9 +266,7 @@ class DTUPair:
             pair_indices = [pair_line[1::2] for pair_line in pair_lines]
             self._other_view_ids = [list(map(int, indices)) for indices in pair_indices]
             pair_scores = [pair_line[2::2] for pair_line in pair_lines]
-            self._other_view_scores = [
-                list(map(float, scores)) for scores in pair_scores
-            ]
+            self._other_view_scores = [list(map(float, scores)) for scores in pair_scores]
 
             for idx, other_view_ids in enumerate(self._other_view_ids):
                 while 0 < len(other_view_ids) < 10:
@@ -362,44 +356,27 @@ class DTUScene:
         self.name = osp.split(root)[1]
 
         pair = DTUPair(osp.join(root, "cameras", "pair.txt"))
-        self.source_ids = {
-            keyview_id: pair.get_source_ids(keyview_id)
-            for keyview_id in pair.keyview_ids
-        }
-        self.source_scores = {
-            keyview_id: pair.get_source_scores(keyview_id)
-            for keyview_id in pair.keyview_ids
-        }
+        self.source_ids = {keyview_id: pair.get_source_ids(keyview_id) for keyview_id in pair.keyview_ids}
+        self.source_scores = {keyview_id: pair.get_source_scores(keyview_id) for keyview_id in pair.keyview_ids}
 
-        cam_files = [
-            x for x in os.listdir(osp.join(root, "cameras")) if x.endswith("cam.txt")
-        ]
-        self.min_depths = {
-            int(x[:8]): DTUMinDepth(osp.join("cameras", x)).load(root)
-            for x in cam_files
-        }
-        self.max_depths = {
-            int(x[:8]): DTUMaxDepth(osp.join("cameras", x)).load(root)
-            for x in cam_files
-        }
+        cam_files = [x for x in os.listdir(osp.join(root, "cameras")) if x.endswith("cam.txt")]
+        self.min_depths = {int(x[:8]): DTUMinDepth(osp.join("cameras", x)).load(root) for x in cam_files}
+        self.max_depths = {int(x[:8]): DTUMaxDepth(osp.join("cameras", x)).load(root) for x in cam_files}
 
-        images = [
-            x for x in os.listdir(osp.join(root, "images")) if x.endswith("0_r5000.png")
-        ]
+        images = [x for x in os.listdir(osp.join(root, "images")) if x.endswith("0_r5000.png")]
         self.images = [int(x.split("_")[1]) for x in images]
         masks = [x for x in os.listdir(osp.join(root, "masks")) if x.endswith(".png")]
         self.masks = [int(x[:8]) for x in masks]
         self.masks = sorted(self.masks)[: len(self.images)]
-        depths = [
-            x for x in os.listdir(osp.join(root, "gt_depths")) if x.endswith(".pfm")
-        ]
+        depths = [x for x in os.listdir(osp.join(root, "gt_depths")) if x.endswith(".pfm")]
         self.depths = [int(x[:8]) for x in depths]
         self.depths = sorted(self.depths)[: len(self.images)]
         self.intrinsics = [int(x[:8]) for x in cam_files]
         self.poses = [int(x[:8]) for x in cam_files]
 
         assert len(
-            set(self.depths)
+            set(self.images)
+            .intersection(set(self.depths))
             .intersection(set(self.intrinsics))
             .intersection(set(self.min_depths.keys()))
             .intersection(set(self.max_depths.keys()))
@@ -409,10 +386,12 @@ class DTUScene:
         ), f"{len(set(self.depths)).intersection(set(self.intrinsics)).intersection(set(self.min_depths.keys())).intersection(set(self.max_depths.keys())).intersection(set(self.poses))} not equal to {len(self.images)}"
 
         for key_id, cur_source_ids in self.source_ids.items():
+            assert key_id in self.images
             assert key_id in self.depths
             assert key_id in self.poses
             assert key_id in self.intrinsics
             for source_id in cur_source_ids:
+                assert source_id in self.images
                 assert source_id in self.depths
                 assert source_id in self.poses
                 assert source_id in self.intrinsics
@@ -425,23 +404,21 @@ class DTUScene:
 class DTU(Dataset):
     base_dataset = "dtu"
 
-    def _init_samples(self, scene_names=None, num_source_views=None):
+    def _init_samples(self, scene_names=None, num_source_views=None, all_combinations=True):
         sample_list_path = _get_sample_list_path(self.name)
         if sample_list_path is not None and osp.isfile(sample_list_path):
             super()._init_samples_from_list()
         else:
             self._init_samples_from_root_dir(
-                scene_names=scene_names, num_source_views=num_source_views
+                scene_names=scene_names, num_source_views=num_source_views, all_combinations=all_combinations
             )
             self._write_samples_list()
 
-    def _init_samples_from_root_dir(self, scene_names=None, num_source_views=None):
+    def _init_samples_from_root_dir(self, scene_names=None, num_source_views=None, all_combinations=True):
+        from itertools import combinations
+
         scenes = [x for x in os.listdir(self.root) if osp.isdir(osp.join(self.root, x))]
-        scenes = (
-            [x for x in scenes if x in scene_names]
-            if scene_names is not None
-            else scenes
-        )
+        scenes = [x for x in scenes if x in scene_names] if scene_names is not None else scenes
         scenes = sorted(scenes)
         scenes = [DTUScene(osp.join(self.root, x)) for x in scenes]
 
@@ -449,43 +426,39 @@ class DTU(Dataset):
             for key_id in scene.source_ids.keys():
                 all_source_ids = scene.source_ids[key_id]
                 all_scores = scene.source_scores[key_id]
-                cur_num_source_views = (
-                    num_source_views
-                    if num_source_views is not None
-                    else len(all_source_ids)
-                )
-
+                cur_num_source_views = num_source_views if num_source_views is not None else len(all_source_ids)
+                if all_combinations:
+                    source_id_combinations = [list(x) for x in list(combinations(all_source_ids, cur_num_source_views))]
+                else:
+                    source_id_combinations = [all_source_ids[:cur_num_source_views]]
                 for light_idx in range(7):
-                    sample = DTUSample(
-                        name=scene.name
-                        + "/key{:02d}".format(key_id)
-                        + f"/light{light_idx}",
-                        base=scene.name,
-                    )
-                    all_ids = [key_id] + all_source_ids[:cur_num_source_views]
-                    images = [
-                        (x + 1, light_idx) for x in all_ids
-                    ]  # image numbering in dtu starts from 1
-                    poses = all_ids
-                    masks = key_id
-                    intrinsics = all_ids
-                    min_depth = scene.min_depths[key_id]
-                    max_depth = scene.max_depths[key_id]
-                    depth = key_id
+                    for source_ids in source_id_combinations:
+                        sample = DTUSample(
+                            name=scene.name + "/key{:02d}".format(key_id) + f"/light{light_idx}",
+                            base=scene.name,
+                        )
+                        all_ids = [key_id] + source_ids
+                        images = [(x, light_idx) for x in all_ids]
+                        poses = all_ids
+                        masks = key_id
+                        intrinsics = all_ids
+                        min_depth = scene.min_depths[key_id]
+                        max_depth = scene.max_depths[key_id]
+                        depth = key_id
 
-                    sample.data["images"] = images
-                    sample.data["poses"] = poses
-                    sample.data["intrinsics"] = intrinsics
-                    sample.data["masks"] = masks
-                    sample.data["depth"] = depth
-                    sample.data["depth_range"] = (min_depth, max_depth)
-                    sample.data["keyview_idx"] = 0
+                        sample.data["images"] = images
+                        sample.data["poses"] = poses
+                        sample.data["intrinsics"] = intrinsics
+                        sample.data["masks"] = masks
+                        sample.data["depth"] = depth
+                        sample.data["depth_range"] = (min_depth, max_depth)
+                        sample.data["keyview_idx"] = 0
 
-                    # sample.data['_keyview_id'] = key_id
-                    # sample.data['_source_view_ids'] = source_ids
-                    # sample.data['_source_view_scores'] = source_scores
+                        # sample.data['_keyview_id'] = key_id
+                        # sample.data['_source_view_ids'] = source_ids
+                        # sample.data['_source_view_scores'] = source_scores
 
-                    self.samples.append(sample)
+                        self.samples.append(sample)
 
 
 @register_default_dataset
@@ -513,7 +486,7 @@ class DTURobustMVD(DTU):
 
 @register_dataset
 class DTUMvsnetTrain(DTU):
-    split = "mvsnet_train"
+    split = "train_mvsnet"
     dataset_type = "mvd"
 
     def __init__(self, root=None, layouts=None, **kwargs):
@@ -523,35 +496,8 @@ class DTUMvsnetTrain(DTU):
             MVDUnstructuredDefaultLayout("default", num_views=11, max_views=4),
             AllImagesLayout("all_images", num_views=11),
         ]
-        layouts = default_layouts + layouts if layouts is not None else default_layouts
+        layouts = default_layouts + (layouts if layouts is not None else default_layouts)
 
         super().__init__(
-            scene_names=scene_names,
-            num_source_views=2,
-            root=root,
-            layouts=layouts,
-            **kwargs,
-        )
-
-
-@register_dataset
-class DTUMVSnetTest(DTU):
-    split = "mvsnet_test"
-    dataset_type = "mvd"
-
-    def __init__(self, root=None, layouts=None, **kwargs):
-        root = root if root is not None else self._get_path("dtu", "root")
-        scene_names = DTU_EVAL_SCENES
-        default_layouts = [
-            MVDUnstructuredDefaultLayout("default", num_views=11, max_views=4),
-            AllImagesLayout("all_images", num_views=11),
-        ]
-        layouts = default_layouts + layouts if layouts is not None else default_layouts
-
-        super().__init__(
-            scene_names=scene_names,
-            num_source_views=2,
-            root=root,
-            layouts=layouts,
-            **kwargs,
+            scene_names=scene_names, num_source_views=2, all_combinations=False, root=root, layouts=layouts, **kwargs
         )

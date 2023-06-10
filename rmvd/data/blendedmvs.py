@@ -229,9 +229,7 @@ class BlendedMVSPair:
             pair_indices = [pair_line[1::2] for pair_line in pair_lines]
             self._other_view_ids = [list(map(int, indices)) for indices in pair_indices]
             pair_scores = [pair_line[2::2] for pair_line in pair_lines]
-            self._other_view_scores = [
-                list(map(float, scores)) for scores in pair_scores
-            ]
+            self._other_view_scores = [list(map(float, scores)) for scores in pair_scores]
 
             for idx, other_view_ids in enumerate(self._other_view_ids):
                 while 0 < len(other_view_ids) < 10:
@@ -319,39 +317,17 @@ class BlendedMVSSequence:
         self.name = osp.split(root)[1]
 
         pair = BlendedMVSPair(osp.join(root, "cams", "pair.txt"))
-        self.source_ids = {
-            keyview_id: pair.get_source_ids(keyview_id)
-            for keyview_id in pair.keyview_ids
-        }
-        self.source_scores = {
-            keyview_id: pair.get_source_scores(keyview_id)
-            for keyview_id in pair.keyview_ids
-        }
+        self.source_ids = {keyview_id: pair.get_source_ids(keyview_id) for keyview_id in pair.keyview_ids}
+        self.source_scores = {keyview_id: pair.get_source_scores(keyview_id) for keyview_id in pair.keyview_ids}
 
-        cam_files = [
-            x for x in os.listdir(osp.join(root, "cams")) if x.endswith("cam.txt")
-        ]
-        self.min_depths = {
-            int(x[:8]): BlendedMVSMinDepth(osp.join("cams", x)).load(root)
-            for x in cam_files
-        }
-        self.max_depths = {
-            int(x[:8]): BlendedMVSMaxDepth(osp.join("cams", x)).load(root)
-            for x in cam_files
-        }
+        cam_files = [x for x in os.listdir(osp.join(root, "cams")) if x.endswith("cam.txt")]
+        self.min_depths = {int(x[:8]): BlendedMVSMinDepth(osp.join("cams", x)).load(root) for x in cam_files}
+        self.max_depths = {int(x[:8]): BlendedMVSMaxDepth(osp.join("cams", x)).load(root) for x in cam_files}
 
         # perform some checks that all data is there:
-        images = [
-            x
-            for x in os.listdir(osp.join(root, "blended_images"))
-            if x.endswith("masked.jpg")
-        ]
+        images = [x for x in os.listdir(osp.join(root, "blended_images")) if x.endswith("masked.jpg")]
         self.images = [int(x[:8]) for x in images]
-        depths = [
-            x
-            for x in os.listdir(osp.join(root, "rendered_depth_maps"))
-            if x.endswith(".pfm")
-        ]
+        depths = [x for x in os.listdir(osp.join(root, "rendered_depth_maps")) if x.endswith(".pfm")]
         self.depths = [int(x[:8]) for x in depths]
         self.intrinsics = [int(x[:8]) for x in cam_files]
         self.poses = [int(x[:8]) for x in cam_files]
@@ -382,29 +358,21 @@ class BlendedMVSSequence:
 
 
 class BlendedMVS(Dataset):
-    def _init_samples(
-        self, scene_names=None, num_source_views=None, all_combinations=True
-    ):
+    def _init_samples(self, scene_names=None, num_source_views=None, all_combinations=True):
         sample_list_path = _get_sample_list_path(self.name)
         if sample_list_path is not None and osp.isfile(sample_list_path):
             super()._init_samples_from_list()
         else:
             self._init_samples_from_root_dir(
-                scene_names=scene_names,
-                num_source_views=num_source_views,
-                all_combinations=all_combinations,
+                scene_names=scene_names, num_source_views=num_source_views, all_combinations=all_combinations
             )
             self._write_samples_list()
 
-    def _init_samples_from_root_dir(
-        self, scene_names=None, num_source_views=None, all_combinations=True
-    ):
+    def _init_samples_from_root_dir(self, scene_names=None, num_source_views=None, all_combinations=True):
         from itertools import combinations
 
         seqs = [x for x in os.listdir(self.root) if osp.isdir(osp.join(self.root, x))]
-        seqs = (
-            [x for x in seqs if x in scene_names] if scene_names is not None else seqs
-        )
+        seqs = [x for x in seqs if x in scene_names] if scene_names is not None else seqs
         seqs = sorted(seqs)
         seqs = [BlendedMVSSequence(osp.join(self.root, x)) for x in seqs]
 
@@ -412,30 +380,17 @@ class BlendedMVS(Dataset):
             for key_id in seq.source_ids.keys():
                 all_source_ids = seq.source_ids[key_id]
                 all_source_scores = seq.source_scores[key_id]
-                cur_num_source_views = (
-                    num_source_views
-                    if num_source_views is not None
-                    else len(all_source_ids)
-                )
+                cur_num_source_views = num_source_views if num_source_views is not None else len(all_source_ids)
 
                 if all_combinations:
-                    source_id_combinations = [
-                        list(x)
-                        for x in list(
-                            combinations(all_source_ids, cur_num_source_views)
-                        )
-                    ]
+                    source_id_combinations = [list(x) for x in list(combinations(all_source_ids, cur_num_source_views))]
                 else:
                     source_id_combinations = [all_source_ids[:cur_num_source_views]]
 
                 for source_ids in source_id_combinations:
-                    sample = BlendedMVSSample(
-                        name=seq.name + "/key{:06d}".format(key_id), base=seq.name
-                    )
+                    sample = BlendedMVSSample(name=seq.name + "/key{:06d}".format(key_id), base=seq.name)
 
-                    source_scores = [
-                        all_source_scores[all_source_ids.index(x)] for x in source_ids
-                    ]
+                    source_scores = [all_source_scores[all_source_ids.index(x)] for x in source_ids]
                     all_ids = [key_id] + source_ids
 
                     images = all_ids
@@ -459,9 +414,7 @@ class BlendedMVS(Dataset):
                     self.samples.append(sample)
 
 
-class BlendedMVSSeq4Train(
-    BlendedMVS
-):  # intentionally not registered as dataset, as this split is not used anywhere
+class BlendedMVSSeq4Train(BlendedMVS):  # intentionally not registered as dataset, as this split is not used anywhere
     base_dataset = "blendedmvs"
     split = "seq4_train"
     dataset_type = "mvd"
@@ -478,12 +431,7 @@ class BlendedMVSSeq4Train(
         layouts = default_layouts + layouts if layouts is not None else default_layouts
 
         super().__init__(
-            scene_names=scene_names,
-            num_source_views=4,
-            all_combinations=True,
-            root=root,
-            layouts=layouts,
-            **kwargs,
+            scene_names=scene_names, num_source_views=4, all_combinations=True, root=root, layouts=layouts, **kwargs
         )
 
 
@@ -491,13 +439,9 @@ class BlendedMVSSeq4Train(
 class BlendedMVSSeq4TrainSmall(BlendedMVSSeq4Train):
     split = "robust_mvd"
 
-    def _init_samples_from_root_dir(
-        self, scene_names=None, num_source_views=None, all_combinations=True
-    ):
+    def _init_samples_from_root_dir(self, scene_names=None, num_source_views=None, all_combinations=True):
         super()._init_samples_from_root_dir(
-            scene_names=scene_names,
-            num_source_views=num_source_views,
-            all_combinations=all_combinations,
+            scene_names=scene_names, num_source_views=num_source_views, all_combinations=all_combinations
         )
         self.samples = self.samples[::2]
 
@@ -520,37 +464,5 @@ class BlendedMVSMVSNetTrain(BlendedMVS):
         layouts = default_layouts + layouts if layouts is not None else default_layouts
 
         super().__init__(
-            scene_names=scene_names,
-            num_source_views=2,
-            all_combinations=False,
-            root=root,
-            layouts=layouts,
-            **kwargs,
-        )
-
-
-@register_dataset
-class BlendedMVSMVSNetEval(BlendedMVS):
-    base_dataset = "blendedmvs"
-    split = "test_mvsnet"
-    dataset_type = "mvd"
-
-    def __init__(self, root=None, layouts=None, **kwargs):
-        root = root if root is not None else self._get_path("blendedmvs", "root")
-
-        scene_names = BMVS_VAL_SCENES
-
-        default_layouts = [
-            MVDUnstructuredDefaultLayout("default", num_views=3, max_views=3),
-            AllImagesLayout("all_images", num_views=3),
-        ]
-        layouts = default_layouts + layouts if layouts is not None else default_layouts
-
-        super().__init__(
-            scene_names=scene_names,
-            num_source_views=2,
-            all_combinations=False,
-            root=root,
-            layouts=layouts,
-            **kwargs,
+            scene_names=scene_names, num_source_views=2, all_combinations=False, root=root, layouts=layouts, **kwargs
         )

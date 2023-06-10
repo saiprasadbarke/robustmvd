@@ -14,9 +14,7 @@ class KITTIImage:
 
     def load(self, root):
         path = osp.join(root, self.path)
-        image = np.array(Image.open(path).convert("RGB"), dtype=np.float32).transpose(
-            2, 0, 1
-        )
+        image = np.array(Image.open(path).convert("RGB"), dtype=np.float32).transpose(2, 0, 1)
         return image
 
 
@@ -56,10 +54,7 @@ class KITTISample(Sample):
                 else:
                     out_dict[key] = val
             else:
-                out_dict[key] = [
-                    ele if isinstance(ele, np.ndarray) else ele.load(root)
-                    for ele in val
-                ]
+                out_dict[key] = [ele if isinstance(ele, np.ndarray) else ele.load(root) for ele in val]
 
         return out_dict
 

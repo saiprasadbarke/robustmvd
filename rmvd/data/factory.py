@@ -4,6 +4,7 @@ from glob import glob
 from .registry import get_dataset, has_dataset
 from .compound_dataset import CompoundDataset
 from .dataset import Dataset
+from rmvd.utils import logging
 
 
 def create_dataset(dataset_name_or_path, dataset_type=None, split=None, **kwargs):
@@ -21,27 +22,20 @@ def create_dataset(dataset_name_or_path, dataset_type=None, split=None, **kwargs
     Keyword Args:
         **kwargs: Arguments for the dataset.
     """
-    if has_dataset(
-        dataset_name=dataset_name_or_path, dataset_type=dataset_type, split=split
-    ):
+    if has_dataset(dataset_name=dataset_name_or_path, dataset_type=dataset_type, split=split):
         return _create_dataset_from_registry(
-            dataset_name=dataset_name_or_path,
-            dataset_type=dataset_type,
-            split=split,
-            **kwargs,
+            dataset_name=dataset_name_or_path, dataset_type=dataset_type, split=split, **kwargs
         )
     else:
         if len(kwargs) > 0:
-            print(
+            logging.warning(
                 f"Warning: arguments {', '.join(kwargs.keys())} were ignored when creating the dataset {dataset_name_or_path}."
             )
         return _create_dataset_from_cfg(path=dataset_name_or_path)
 
 
 def _create_dataset_from_registry(dataset_name, dataset_type, split, **kwargs):
-    dataset_cls = get_dataset(
-        dataset_name=dataset_name, dataset_type=dataset_type, split=split
-    )
+    dataset_cls = get_dataset(dataset_name=dataset_name, dataset_type=dataset_type, split=split)
     dataset = dataset_cls(**kwargs)
     return dataset
 
@@ -49,9 +43,7 @@ def _create_dataset_from_registry(dataset_name, dataset_type, split, **kwargs):
 def _create_dataset_from_cfg(path):
     if not osp.split(path)[1] == "dataset.cfg":
         paths = glob(f"{path}/**/dataset.cfg", recursive=True)
-        assert (
-            len(paths) > 0
-        ), f"No dataset.cfg file found in {path} or its subdirectories."
+        assert len(paths) > 0, f"No dataset.cfg file found in {path} or its subdirectories."
         path = paths[0]
     dataset = Dataset.from_config(path)
     return dataset
@@ -83,9 +75,7 @@ def create_dataloader(
         **kwargs: Arguments for the dataset.
     """
     # TODO: take dataset_path_or_name as input and build on create_dataset function
-    dataset_cls = get_dataset(
-        dataset_name=dataset_name, dataset_type=dataset_type, split=split
-    )
+    dataset_cls = get_dataset(dataset_name=dataset_name, dataset_type=dataset_type, split=split)
     dataloader = dataset_cls.init_as_loader(
         batch_size=batch_size,
         shuffle=shuffle,

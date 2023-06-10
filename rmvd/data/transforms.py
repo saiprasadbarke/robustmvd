@@ -7,12 +7,7 @@ from PIL import Image
 import torchvision.transforms
 import cv2
 
-from rmvd.utils import (
-    trans_from_transform,
-    rot_from_transform,
-    transform_from_rot_trans,
-    compute_depth_range,
-)
+from rmvd.utils import trans_from_transform, rot_from_transform, transform_from_rot_trans, compute_depth_range
 
 
 class Bernoulli:
@@ -35,17 +30,11 @@ class UniformBernoulli:
 
     def sample_noexp(self, size=1):
         gate = Bernoulli(self.prob).sample(size)
-        return gate * np.random.uniform(
-            low=self.mean - self.spread, high=self.mean + self.spread, size=size
-        )
+        return gate * np.random.uniform(low=self.mean - self.spread, high=self.mean + self.spread, size=size)
 
     def sample_exp(self, size):
         gate = Bernoulli(self.prob).sample(size=1)
-        return gate * np.exp(
-            np.random.uniform(
-                low=self.mean - self.spread, high=self.mean + self.spread, size=size
-            )
-        )
+        return gate * np.exp(np.random.uniform(low=self.mean - self.spread, high=self.mean + self.spread, size=size))
 
 
 class ResizeInputs:  # works with and without batched inputs
@@ -73,23 +62,14 @@ class ResizeInputs:  # works with and without batched inputs
         if "images" in sample and sample["images"] is not None:
             images = sample["images"]
             images = [
-                resize(
-                    image,
-                    list(image.shape[:-2]) + [ht, wd],
-                    order=self.__interpolation_order,
-                )
-                for image in images
+                resize(image, list(image.shape[:-2]) + [ht, wd], order=self.__interpolation_order) for image in images
             ]
             sample["images"] = images
 
         # resize intrinsics:
         if "intrinsics" in sample and sample["intrinsics"] is not None:
-            scale_arr = np.array(
-                [[wd / orig_wd] * 3, [ht / orig_ht] * 3, [1.0] * 3], dtype=np.float32
-            )  # 3, 3
-            sample["intrinsics"] = [
-                intrinsic * scale_arr for intrinsic in sample["intrinsics"]
-            ]
+            scale_arr = np.array([[wd / orig_wd] * 3, [ht / orig_ht] * 3, [1.0] * 3], dtype=np.float32)  # 3, 3
+            sample["intrinsics"] = [intrinsic * scale_arr for intrinsic in sample["intrinsics"]]
 
         return sample
 
@@ -115,9 +95,7 @@ class UpscaleInputsToNextMultipleOf:  # works with and without batched inputs
         if ht == orig_ht and wd == orig_wd:
             return sample
         else:
-            return ResizeInputs(
-                size=(ht, wd), interpolation_order=self.__interpolation_order
-            )(sample)
+            return ResizeInputs(size=(ht, wd), interpolation_order=self.__interpolation_order)(sample)
 
 
 class ResizeTargets:
@@ -136,9 +114,7 @@ class ResizeTargets:
         if "depth" in sample and sample["depth"] is not None:
             depth = sample["depth"]
             depth = resize(
-                depth,
-                list(depth.shape[:-2]) + [ht, wd],
-                order=self.__interpolation_order,
+                depth, list(depth.shape[:-2]) + [ht, wd], order=self.__interpolation_order, anti_aliasing=False
             )
             sample["depth"] = depth
 
@@ -146,16 +122,12 @@ class ResizeTargets:
         if "invdepth" in sample and sample["invdepth"] is not None:
             invdepth = sample["invdepth"]
             invdepth = resize(
-                invdepth,
-                list(invdepth.shape[:-2]) + [ht, wd],
-                order=self.__interpolation_order,
+                invdepth, list(invdepth.shape[:-2]) + [ht, wd], order=self.__interpolation_order, anti_aliasing=False
             )
             sample["invdepth"] = invdepth
 
         if "depth_range" in sample and sample["depth_range"] is not None:
-            depth_range = compute_depth_range(
-                depth=sample.get("depth", None), invdepth=sample.get("invdepth", None)
-            )
+            depth_range = compute_depth_range(depth=sample.get("depth", None), invdepth=sample.get("invdepth", None))
             sample["depth_range"] = depth_range
 
         return sample
@@ -188,9 +160,7 @@ class SpatialAugmentation:
                 * UniformBernoulli(mean=0.0, spread=0.3, exp=True).sample(1)[0]
             )
             for i_ in range(5):
-                if (
-                    scale < 1.2 and np.random.rand() < 0.9
-                ):  # mimic the validity check in the old tf code
+                if scale < 1.2 and np.random.rand() < 0.9:  # mimic the validity check in the old tf code
                     scale = (
                         UniformBernoulli(mean=0.2, spread=0.4, exp=True).sample(1)[0]
                         * UniformBernoulli(mean=0.0, spread=0.3, exp=True).sample(1)[0]
@@ -202,12 +172,8 @@ class SpatialAugmentation:
             scale_y = scale
 
             if np.random.rand() < self.__stretch_p:
-                scale_x *= 2 ** np.random.uniform(
-                    -self.__max_stretch, self.__max_stretch
-                )
-                scale_y *= 2 ** np.random.uniform(
-                    -self.__max_stretch, self.__max_stretch
-                )
+                scale_x *= 2 ** np.random.uniform(-self.__max_stretch, self.__max_stretch)
+                scale_y *= 2 ** np.random.uniform(-self.__max_stretch, self.__max_stretch)
 
             scale_x = np.clip(scale_x, min_scale, None)
             scale_y = np.clip(scale_y, min_scale, None)
@@ -220,14 +186,7 @@ class SpatialAugmentation:
                 images = sample["images"]
                 images = [np.transpose(image, [1, 2, 0]) for image in images]  # H, W, 3
                 images = [
-                    cv2.resize(
-                        image,
-                        None,
-                        fx=scale_x,
-                        fy=scale_y,
-                        interpolation=cv2.INTER_LINEAR,
-                    )
-                    for image in images
+                    cv2.resize(image, None, fx=scale_x, fy=scale_y, interpolation=cv2.INTER_LINEAR) for image in images
                 ]
                 images = [np.transpose(image, [2, 0, 1]) for image in images]  # 3, H, W
                 sht, swd = images[0].shape[-2:]
@@ -235,19 +194,13 @@ class SpatialAugmentation:
 
             # resize intrinsics:
             if "intrinsics" in sample and sample["intrinsics"] is not None:
-                scale_arr = np.array(
-                    [[swd / wd] * 3, [sht / ht] * 3, [1.0] * 3], dtype=np.float32
-                )  # 3, 3
-                sample["intrinsics"] = [
-                    intrinsic * scale_arr for intrinsic in sample["intrinsics"]
-                ]
+                scale_arr = np.array([[swd / wd] * 3, [sht / ht] * 3, [1.0] * 3], dtype=np.float32)  # 3, 3
+                sample["intrinsics"] = [intrinsic * scale_arr for intrinsic in sample["intrinsics"]]
 
             # resize depth:
             if "depth" in sample and sample["depth"] is not None:
                 depth = sample["depth"][0]
-                depth = cv2.resize(
-                    depth, None, fx=scale_x, fy=scale_y, interpolation=cv2.INTER_NEAREST
-                )
+                depth = cv2.resize(depth, None, fx=scale_x, fy=scale_y, interpolation=cv2.INTER_NEAREST)
                 depth = depth[None, ...]
                 if sht is None:
                     sht, swd = depth.shape[-2:]
@@ -258,13 +211,7 @@ class SpatialAugmentation:
             # resize invdepth:
             if "invdepth" in sample and sample["invdepth"] is not None:
                 invdepth = sample["invdepth"][0]
-                invdepth = cv2.resize(
-                    invdepth,
-                    None,
-                    fx=scale_x,
-                    fy=scale_y,
-                    interpolation=cv2.INTER_NEAREST,
-                )
+                invdepth = cv2.resize(invdepth, None, fx=scale_x, fy=scale_y, interpolation=cv2.INTER_NEAREST)
                 invdepth = invdepth[None, ...]
                 if sht is None:
                     sht, swd = invdepth.shape[-2:]
@@ -284,9 +231,7 @@ class SpatialAugmentation:
             # crop intrinsics:
             if "intrinsics" in sample and sample["intrinsics"] is not None:
                 intrinsics = sample["intrinsics"]
-                shift_arr = np.array(
-                    [[0, 0, -x0], [0, 0, -y0], [0.0] * 3], dtype=np.float32
-                )  # 3, 3
+                shift_arr = np.array([[0, 0, -x0], [0, 0, -y0], [0.0] * 3], dtype=np.float32)  # 3, 3
                 intrinsics = [intrinsic + shift_arr for intrinsic in intrinsics]
                 sample["intrinsics"] = intrinsics
 
@@ -302,8 +247,7 @@ class SpatialAugmentation:
 
             if "depth_range" in sample and sample["depth_range"] is not None:
                 depth_range = compute_depth_range(
-                    depth=sample.get("depth", None),
-                    invdepth=sample.get("invdepth", None),
+                    depth=sample.get("depth", None), invdepth=sample.get("invdepth", None)
                 )
                 sample["depth_range"] = depth_range
 
@@ -322,9 +266,7 @@ class ColorJitter:
         num_images = len(images)
         image_stack = np.concatenate(images, axis=0)  # H*num_images, W, 3
         image_stack = image_stack.astype(np.uint8)
-        image_stack = np.array(
-            self.color_aug(Image.fromarray(image_stack)), dtype=np.float32
-        )  # H*num_images, W, 3
+        image_stack = np.array(self.color_aug(Image.fromarray(image_stack)), dtype=np.float32)  # H*num_images, W, 3
         images = np.split(image_stack, num_images, axis=0)
         images = [np.transpose(image, [2, 0, 1]) for image in images]  # 3, H, W
         sample["images"] = images
@@ -340,12 +282,9 @@ class NormalizeImagesToMinMax(object):  # works with and without batched inputs
 
     def __call__(self, sample):
         images = sample["images"]  # (3, H, W) or (N, 3, H, W), float32, range [0, 255]
+        images = [image / 255.0 for image in images]  # (3, H, W) or (N, 3, H, W), float32, range [0, 1]
         images = [
-            image / 255.0 for image in images
-        ]  # (3, H, W) or (N, 3, H, W), float32, range [0, 1]
-        images = [
-            image * (self.__max_val - self.__min_val) + self.__min_val
-            for image in images
+            image * (self.__max_val - self.__min_val) + self.__min_val for image in images
         ]  # (3, H, W) or (N, 3, H, W), float32, range [min_val, max_val]
         sample["images"] = images
         return sample
@@ -361,26 +300,16 @@ class NormalizeImagesByShiftAndScale(object):
     def __call__(self, sample):
         images = sample["images"]  # (3, H, W) or (N, 3, H, W), float32
         if images[0].ndim == 3:
-            images = [
-                np.transpose(image, [1, 2, 0]) for image in images
-            ]  # H, W, 3, float32
+            images = [np.transpose(image, [1, 2, 0]) for image in images]  # H, W, 3, float32
         elif images[0].ndim == 4:
-            images = [
-                np.transpose(image, [0, 2, 3, 1]) for image in images
-            ]  # N, H, W, 3, float32
+            images = [np.transpose(image, [0, 2, 3, 1]) for image in images]  # N, H, W, 3, float32
 
-        images = [
-            (image - self.__shift) / self.__scale for image in images
-        ]  # H, W, 3 float32
+        images = [(image - self.__shift) / self.__scale for image in images]  # H, W, 3 float32
 
         if images[0].ndim == 3:
-            images = [
-                np.transpose(image, [2, 0, 1]) for image in images
-            ]  # 3, H, W, float32
+            images = [np.transpose(image, [2, 0, 1]) for image in images]  # 3, H, W, float32
         elif images[0].ndim == 4:
-            images = [
-                np.transpose(image, [0, 3, 1, 2]) for image in images
-            ]  # N, 3, H, W, float32
+            images = [np.transpose(image, [0, 3, 1, 2]) for image in images]  # N, 3, H, W, float32
 
         images = [image.astype(np.float32) for image in images]
         sample["images"] = images
@@ -459,9 +388,7 @@ class MaskDepthByMinMax:
     def __call__(self, sample):
         depth = sample["depth"]
         invdepth = sample["invdepth"]
-        mask = ((depth >= self.__min_depth) & (depth <= self.__max_depth)).astype(
-            np.float32
-        )
+        mask = ((depth >= self.__min_depth) & (depth <= self.__max_depth)).astype(np.float32)
         depth = depth * mask
         invdepth = invdepth * mask
         depth_range = compute_depth_range(depth=depth)
@@ -479,11 +406,7 @@ class NormalizeIntrinsics:  # works with and without batched inputs
         ht, wd = image.shape[-2:]
 
         if "intrinsics" in sample and sample["intrinsics"] is not None:
-            scale_arr = np.array(
-                [[1 / wd] * 3, [1 / ht] * 3, [1.0] * 3], dtype=np.float32
-            )  # 3, 3
-            sample["intrinsics"] = [
-                intrinsic * scale_arr for intrinsic in sample["intrinsics"]
-            ]
+            scale_arr = np.array([[1 / wd] * 3, [1 / ht] * 3, [1.0] * 3], dtype=np.float32)  # 3, 3
+            sample["intrinsics"] = [intrinsic * scale_arr for intrinsic in sample["intrinsics"]]
 
         return sample
