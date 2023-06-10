@@ -29,7 +29,9 @@ def copy_rectified_images(in_base, out_base):
 
         for image in images:
             image_in = osp.join(in_path, image)
-            image_out = osp.join(out_path, image)
+            name_split = image.split("_")
+            image_corrected = f"{name_split[0]}_{(int(name_split[1]) -1):03d}_{name_split[2]}_{name_split[3]}"
+            image_out = osp.join(out_path, image_corrected)
             cp(image_in, image_out)
 
 
