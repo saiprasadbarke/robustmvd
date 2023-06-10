@@ -24,6 +24,6 @@ class SL1Loss(nn.Module):
             targets = F.interpolate(targets, size=inputs.shape[-2:], mode="bilinear", align_corners=False)
             masks = F.interpolate(masks.float(), size=inputs.shape[-2:], mode="nearest")
         masks = masks > 0.5
-        loss = F.smooth_l1_loss(inputs[masks], targets[masks], size_average=True)
+        loss = F.smooth_l1_loss(inputs[masks], targets[masks])
 
         return loss, {}, {}
