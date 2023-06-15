@@ -8,10 +8,7 @@ from tqdm import tqdm
 
 
 def cp(a, b, verbose=True, followLinks=False):
-    os.system(
-        'cp -r %s %s "%s" "%s"'
-        % ("-v" if verbose else "", "-L" if followLinks else "", a, b)
-    )
+    os.system('cp -r %s %s "%s" "%s"' % ("-v" if verbose else "", "-L" if followLinks else "", a, b))
 
 
 def copy_rectified_images(in_base, out_base):
@@ -75,7 +72,7 @@ def copy_gt_masks(in_base, out_base):
 
 def copy_camera_params(in_base, out_base):
     pair_in = osp.join(in_base, "dtu", "Cameras_1", "pair.txt")
-    in_path = osp.join(in_base, "dtu", "Cameras_1", "train")
+    in_path = osp.join(in_base, "dtu", "Cameras_1")
     cameras = os.listdir(in_path)
     scans = os.listdir(out_base)
 

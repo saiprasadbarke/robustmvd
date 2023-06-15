@@ -9,7 +9,6 @@ from tqdm import tqdm
 from .dataset import Dataset, Sample, _get_sample_list_path
 from .registry import register_dataset, register_default_dataset
 from .layouts import MVDUnstructuredDefaultLayout, AllImagesLayout
-from rmvd.exceptions.io_exceptions import PFMFileException
 
 # Taken from https://github.com/xy-guo/MVSNet_pytorch/blob/master/lists/dtu/train.txt
 DTU_TRAIN_SCENES = [
@@ -152,12 +151,12 @@ def readPFM(file):
     elif header.decode("ascii") == "Pf":
         color = False
     else:
-        raise PFMFileException("Not a PFM file.")
+        raise Exception("Not a PFM file.")
 
     if dim_match := re.match(r"^(\d+)\s(\d+)\s$", file.readline().decode("ascii")):
         width, height = list(map(int, dim_match.groups()))
     else:
-        raise PFMFileException("Malformed PFM header.")
+        raise Exception("Malformed PFM header.")
 
     scale = float(file.readline().decode("ascii").rstrip())
     endian = "<" if scale < 0 else ">"
@@ -434,7 +433,7 @@ class DTU(Dataset):
                 for light_idx in range(7):
                     for source_ids in source_id_combinations:
                         sample = DTUSample(
-                            name=scene.name + "/key{:02d}".format(key_id) + f"/light{light_idx}",
+                            name=f"{scene.name}/key{key_id:02d}/light{light_idx:02d}",
                             base=scene.name,
                         )
                         all_ids = [key_id] + source_ids

@@ -110,21 +110,13 @@ class MultiViewDepthEvaluation:
             self.results_file = None
             self.log_file_path = None
 
-        self.inputs = (
-            list(set(inputs + ["images"])) if inputs is not None else ["images"]
-        )
+        self.inputs = list(set(inputs + ["images"])) if inputs is not None else ["images"]
         self.alignment = alignment
         self.max_source_views = max_source_views
         self.min_source_views = (
-            min_source_views
-            if max_source_views is None
-            else min(min_source_views, max_source_views)
+            min_source_views if max_source_views is None else min(min_source_views, max_source_views)
         )
-        self.view_ordering = (
-            view_ordering
-            if (self.max_source_views is None) or (self.max_source_views > 0)
-            else None
-        )
+        self.view_ordering = view_ordering if (self.max_source_views is None) or (self.max_source_views > 0) else None
         self.eval_uncertainty = eval_uncertainty
         self.clip_pred_depth = clip_pred_depth
         self.sparse_pred = sparse_pred
@@ -203,9 +195,7 @@ class MultiViewDepthEvaluation:
             Results of the evaluation.
         """
         if self.results_file is not None and osp.exists(self.results_file):
-            logging.info(
-                f"Skipping evaluation {self.name} because it is already finished."
-            )
+            logging.info(f"Skipping evaluation {self.name} because it is already finished.")
             results = pd.read_pickle(self.results_file)
             return results
 
@@ -273,18 +263,11 @@ class MultiViewDepthEvaluation:
             else:
                 step_size = len(self.sample_indices) / qualitatives  # <=1
                 self.qualitative_indices = list(
-                    set(
-                        [
-                            self.sample_indices[int(i * step_size)]
-                            for i in range(qualitatives)
-                        ]
-                    )
+                    set([self.sample_indices[int(i * step_size)] for i in range(qualitatives)])
                 )
 
     def _evaluate(self):
-        for sample_num, (sample_idx, sample) in enumerate(
-            zip(self.sample_indices, self.dataloader)
-        ):
+        for sample_num, (sample_idx, sample) in enumerate(zip(self.sample_indices, self.dataloader)):
             self.cur_sample_num = sample_num
             self.cur_sample_idx = sample_idx
 
@@ -295,16 +278,12 @@ class MultiViewDepthEvaluation:
                 )
 
             # prepare sample:
-            should_qualitative = (self.cur_sample_idx in self.qualitative_indices) and (
-                self.out_dir is not None
-            )
+            should_qualitative = (self.cur_sample_idx in self.qualitative_indices) and (self.out_dir is not None)
             keyview_idx = int(sample["keyview_idx"])
             sample_inputs, sample_gt = self._inputs_and_gt_from_sample(sample)
 
             # get evaluation order:
-            ordered_source_indices = self._get_source_view_ordering(
-                sample_inputs=sample_inputs, sample_gt=sample_gt
-            )
+            ordered_source_indices = self._get_source_view_ordering(sample_inputs=sample_inputs, sample_gt=sample_gt)
             max_source_views = (
                 min(len(ordered_source_indices), self.max_source_views)
                 if self.max_source_views is not None
@@ -320,29 +299,21 @@ class MultiViewDepthEvaluation:
                 cur_view_indices = list(sorted([keyview_idx] + cur_source_indices))
 
                 if self.verbose:
-                    logging.info(
-                        f"\tEvaluating with {num_source_views} / {max_source_views} source views:"
-                    )
+                    logging.info(f"\tEvaluating with {num_source_views} / {max_source_views} source views:")
                     logging.info(f"\t\tSource view indices: {cur_source_indices}.")
 
                 self._reset_memory_stats()
 
                 # construct current input sample:
                 cur_sample_gt = deepcopy(sample_gt)
-                cur_sample_inputs = filter_views_in_sample(
-                    sample=sample_inputs, indices_to_keep=cur_view_indices
-                )
+                cur_sample_inputs = filter_views_in_sample(sample=sample_inputs, indices_to_keep=cur_view_indices)
 
                 # run model:
                 pred, runtimes, gpu_mem = self._run_model(cur_sample_inputs)
-                self._postprocess_sample_and_output(
-                    cur_sample_inputs, cur_sample_gt, pred
-                )
+                self._postprocess_sample_and_output(cur_sample_inputs, cur_sample_gt, pred)
 
                 # compute and log metrics:
-                metrics = self._compute_metrics(
-                    sample_inputs=cur_sample_inputs, sample_gt=cur_sample_gt, pred=pred
-                )
+                metrics = self._compute_metrics(sample_inputs=cur_sample_inputs, sample_gt=cur_sample_gt, pred=pred)
                 metrics.update(runtimes)
                 metrics.update(gpu_mem)
                 self._log_metrics(metrics, num_source_views)
@@ -390,15 +361,9 @@ class MultiViewDepthEvaluation:
 
         pred_depth = pred["depth"][0]
         pred_invdepth = pred["invdepth"][0]
-        pred_mask = (
-            pred_depth != 0
-            if self.sparse_pred
-            else np.ones_like(pred_depth, dtype=bool)
-        )
+        pred_mask = pred_depth != 0 if self.sparse_pred else np.ones_like(pred_depth, dtype=bool)
 
-        pointwise_absrel = pointwise_rel_ae(
-            gt=gt_depth, pred=pred_depth, mask=pred_mask
-        )
+        pointwise_absrel = pointwise_rel_ae(gt=gt_depth, pred=pred_depth, mask=pred_mask)
 
         qualitatives = {
             "pointwise_absrel": pointwise_absrel,
@@ -413,9 +378,7 @@ class MultiViewDepthEvaluation:
 
     def _log_qualitatives(self, qualitatives):
         for qualitative_name, qualitative in qualitatives.items():
-            out_path = osp.join(
-                self.qualitatives_dir, f"{self.cur_sample_idx:07d}-{qualitative_name}"
-            )
+            out_path = osp.join(self.qualitatives_dir, f"{self.cur_sample_idx:07d}-{qualitative_name}")
             npy_path = out_path + ".npy"
             png_path = out_path + ".png"
             np.save(npy_path, qualitative)
@@ -425,9 +388,7 @@ class MultiViewDepthEvaluation:
 
     def _add_dataset_update(self, update_dict):
         if self.cur_sample_idx not in self.dataset_updates:
-            self.dataset_updates[
-                self.cur_sample_idx
-            ] = MultiMultiViewDepthEvaluationUpdate()
+            self.dataset_updates[self.cur_sample_idx] = MultiMultiViewDepthEvaluationUpdate()
 
         self.dataset_updates[self.cur_sample_idx].update_dict.update(update_dict)
 
@@ -462,47 +423,33 @@ class MultiViewDepthEvaluation:
 
     def _get_source_view_ordering(self, sample_inputs, sample_gt):
         if self.view_ordering == "quasi-optimal":
-            return self._get_quasi_optimal_source_view_ordering(
-                sample_inputs=sample_inputs, sample_gt=sample_gt
-            )
+            return self._get_quasi_optimal_source_view_ordering(sample_inputs=sample_inputs, sample_gt=sample_gt)
         elif (self.view_ordering == "nearest") or (self.view_ordering is None):
-            return self._get_nearest_source_view_ordering(
-                sample_inputs=sample_inputs, sample_gt=sample_gt
-            )
+            return self._get_nearest_source_view_ordering(sample_inputs=sample_inputs, sample_gt=sample_gt)
 
     def _get_nearest_source_view_ordering(self, sample_inputs, sample_gt):
         keyview_idx = int(sample_inputs["keyview_idx"])
-        source_indices = [
-            idx for idx in range(len(sample_inputs["images"])) if idx != keyview_idx
-        ]
-        source_view_ordering = sorted(
-            source_indices, key=lambda x: np.abs(x - keyview_idx)
-        )
+        source_indices = [idx for idx in range(len(sample_inputs["images"])) if idx != keyview_idx]
+        source_view_ordering = sorted(source_indices, key=lambda x: np.abs(x - keyview_idx))
         return source_view_ordering
 
     def _get_quasi_optimal_source_view_ordering(self, sample_inputs, sample_gt):
         keyview_idx = int(sample_inputs["keyview_idx"])
-        source_indices = [
-            idx for idx in range(len(sample_inputs["images"])) if idx != keyview_idx
-        ]
+        source_indices = [idx for idx in range(len(sample_inputs["images"])) if idx != keyview_idx]
         source_scores = {}
 
         for source_idx in source_indices:
             # construct temporary sample with a single source view:
             indices_to_keep = [keyview_idx, source_idx]
             cur_sample_gt = deepcopy(sample_gt)
-            cur_sample_inputs = filter_views_in_sample(
-                sample=sample_inputs, indices_to_keep=indices_to_keep
-            )
+            cur_sample_inputs = filter_views_in_sample(sample=sample_inputs, indices_to_keep=indices_to_keep)
 
             # run model:
             pred, _, _ = self._run_model(cur_sample_inputs)
             self._postprocess_sample_and_output(cur_sample_inputs, cur_sample_gt, pred)
 
             # compute absrel for using current source view:
-            metrics = self._compute_metrics(
-                sample_inputs=cur_sample_inputs, sample_gt=cur_sample_gt, pred=pred
-            )
+            metrics = self._compute_metrics(sample_inputs=cur_sample_inputs, sample_gt=cur_sample_gt, pred=pred)
             source_scores[source_idx] = metrics["absrel"]
 
         source_view_ordering = sorted(source_scores, key=source_scores.get)
@@ -523,15 +470,9 @@ class MultiViewDepthEvaluation:
         gt_depth = sample_gt["depth"]
 
         pred_depth = pred["depth"]
-        pred_depth = skimage.transform.resize(
-            pred_depth, gt_depth.shape, order=0, anti_aliasing=False
-        )
+        pred_depth = skimage.transform.resize(pred_depth, gt_depth.shape, order=0, anti_aliasing=False)
 
-        pred_mask = (
-            pred_depth != 0
-            if self.sparse_pred
-            else np.ones_like(pred_depth, dtype=bool)
-        )
+        pred_mask = pred_depth != 0 if self.sparse_pred else np.ones_like(pred_depth, dtype=bool)
         gt_mask = gt_depth > 0
 
         if self.alignment == "median":
@@ -588,10 +529,7 @@ class MultiViewDepthEvaluation:
             pred["least_squares_shift"] = shift
 
         if isinstance(self.clip_pred_depth, tuple):
-            pred_depth = (
-                np.clip(pred_depth, self.clip_pred_depth[0], self.clip_pred_depth[1])
-                * pred_mask
-            )
+            pred_depth = np.clip(pred_depth, self.clip_pred_depth[0], self.clip_pred_depth[1]) * pred_mask
         elif self.clip_pred_depth:
             pred_depth = np.clip(pred_depth, 0.1, 100) * pred_mask
 
@@ -625,9 +563,7 @@ class MultiViewDepthEvaluation:
 
         time_and_mem_valid = self.cur_sample_num >= self.burn_in_samples
         runtime_model_in_sec = end_model - start_model if time_and_mem_valid else np.nan
-        runtime_model_and_io_in_sec = (
-            end_model_and_io - start_model_and_io if time_and_mem_valid else np.nan
-        )
+        runtime_model_and_io_in_sec = end_model_and_io - start_model_and_io if time_and_mem_valid else np.nan
         runtimes = {
             "runtime_model_in_sec": runtime_model_in_sec,
             "runtime_model_in_msec": 1000 * runtime_model_in_sec,
@@ -635,16 +571,8 @@ class MultiViewDepthEvaluation:
             "runtime_model_and_io_in_msec": 1000 * runtime_model_and_io_in_sec,
         }
 
-        gpu_mem_alloc = (
-            int(torch.cuda.max_memory_allocated() / 1024 / 1024)
-            if time_and_mem_valid
-            else np.nan
-        )
-        gpu_mem_reserved = (
-            int(torch.cuda.max_memory_reserved() / 1024 / 1024)
-            if time_and_mem_valid
-            else np.nan
-        )
+        gpu_mem_alloc = int(torch.cuda.max_memory_allocated() / 1024 / 1024) if time_and_mem_valid else np.nan
+        gpu_mem_reserved = int(torch.cuda.max_memory_reserved() / 1024 / 1024) if time_and_mem_valid else np.nan
         gpu_mem = {
             "gpu_mem_alloc_in_mib": gpu_mem_alloc,
             "gpu_mem_alloc_in_mib": gpu_mem_reserved,
@@ -655,15 +583,8 @@ class MultiViewDepthEvaluation:
     def _compute_metrics(self, sample_inputs, sample_gt, pred):
         gt_depth = sample_gt["depth"][0, 0]
         pred_depth = pred["depth"][0, 0]
-        eval_mask = (
-            pred_depth != 0
-            if self.sparse_pred
-            else np.ones_like(pred_depth, dtype=bool)
-        )
-
-        absrel = m_rel_ae(
-            gt=gt_depth, pred=pred_depth, mask=eval_mask, output_scaling_factor=100.0
-        )
+        eval_mask = pred_depth != 0 if self.sparse_pred else np.ones_like(pred_depth, dtype=bool)
+        absrel = m_rel_ae(gt=gt_depth, pred=pred_depth, mask=eval_mask, output_scaling_factor=100.0)
         inliers103 = thresh_inliers(
             gt=gt_depth,
             pred=pred_depth,
@@ -700,15 +621,9 @@ class MultiViewDepthEvaluation:
 
         pred_depth = pred["depth"][0, 0]
         pred_depth_uncertainty = pred["depth_uncertainty"][0, 0]
-        pred_mask = (
-            pred_depth != 0
-            if self.sparse_pred
-            else np.ones_like(pred_depth, dtype=bool)
-        )
+        pred_mask = pred_depth != 0 if self.sparse_pred else np.ones_like(pred_depth, dtype=bool)
 
-        oracle_uncertainty = pointwise_rel_ae(
-            gt=gt_depth, pred=pred_depth, mask=pred_mask
-        )
+        oracle_uncertainty = pointwise_rel_ae(gt=gt_depth, pred=pred_depth, mask=pred_mask)
 
         sparsification_oracle = sparsification(
             gt=gt_depth,
@@ -730,15 +645,9 @@ class MultiViewDepthEvaluation:
         ause = sparsification_errors.sum(skipna=False) / 100
         ause = ause if np.isfinite(ause) else np.nan
 
-        self.sparsification_curves.loc[
-            (self.cur_sample_idx, "oracle"), :
-        ] = sparsification_oracle
-        self.sparsification_curves.loc[
-            (self.cur_sample_idx, "pred"), :
-        ] = sparsification_pred
-        self.sparsification_curves.loc[
-            (self.cur_sample_idx, "error"), :
-        ] = sparsification_errors
+        self.sparsification_curves.loc[(self.cur_sample_idx, "oracle"), :] = sparsification_oracle
+        self.sparsification_curves.loc[(self.cur_sample_idx, "pred"), :] = sparsification_pred
+        self.sparsification_curves.loc[(self.cur_sample_idx, "error"), :] = sparsification_errors
 
         if self.verbose:
             logging.info(f"\t\t\tAUSE={ause}.")
@@ -760,12 +669,8 @@ class MultiViewDepthEvaluation:
 
         # Log results:
         log_name = f"eval/{self.dataset.name}"
-        log_name = (
-            log_name + f"/{self.eval_name}" if self.eval_name is not None else log_name
-        )
-        writer.put_scalar_dict(
-            name=log_name, scalar=results.to_dict(), step=self.finished_iterations
-        )
+        log_name = log_name + f"/{self.eval_name}" if self.eval_name is not None else log_name
+        writer.put_scalar_dict(name=log_name, scalar=results.to_dict(), step=self.finished_iterations)
         # if self.finished_iterations is not None:  # TODO: remove this?
         #     writer.put_scalar_dict(name=log_name + f"/{self.finished_iterations:09d}", scalar=results.to_dict())
         writer.write_out_storage()
@@ -775,55 +680,37 @@ class MultiViewDepthEvaluation:
             if self.verbose:
                 logging.info(f"Writing results to {self.out_dir}.")
 
-            results_per_sample.to_pickle(
-                osp.join(self.sample_results_dir, "results.pickle")
-            )
+            results_per_sample.to_pickle(osp.join(self.sample_results_dir, "results.pickle"))
             results_per_sample.to_csv(osp.join(self.sample_results_dir, "results.csv"))
             results.to_pickle(osp.join(self.quantitatives_dir, "results.pickle"))
             results.to_csv(osp.join(self.quantitatives_dir, "results.csv"))
 
-            num_source_view_results_per_sample.to_csv(
-                osp.join(self.sample_results_dir, "num_source_view_results.csv")
-            )
+            num_source_view_results_per_sample.to_csv(osp.join(self.sample_results_dir, "num_source_view_results.csv"))
             num_source_view_results_per_sample.to_pickle(
                 osp.join(self.sample_results_dir, "num_source_view_results.pickle")
             )
-            num_source_view_results.to_csv(
-                osp.join(self.quantitatives_dir, "num_source_view_results.csv")
-            )
-            num_source_view_results.to_pickle(
-                osp.join(self.quantitatives_dir, "num_source_view_results.pickle")
-            )
+            num_source_view_results.to_csv(osp.join(self.quantitatives_dir, "num_source_view_results.csv"))
+            num_source_view_results.to_pickle(osp.join(self.quantitatives_dir, "num_source_view_results.pickle"))
 
             if self.eval_uncertainty:
                 sample_sparsification_curves = self.sparsification_curves
                 with warnings.catch_warnings():
                     warnings.simplefilter("ignore", category=FutureWarning)
-                    sparsification_curves = sample_sparsification_curves.mean(
-                        axis=0, level=1
-                    )
+                    sparsification_curves = sample_sparsification_curves.mean(axis=0, level=1)
 
-                sparsification_curves.to_pickle(
-                    osp.join(self.quantitatives_dir, "sparsification_curves.pickle")
-                )
-                sparsification_curves.to_csv(
-                    osp.join(self.quantitatives_dir, "sparsification_curves.csv")
-                )
+                sparsification_curves.to_pickle(osp.join(self.quantitatives_dir, "sparsification_curves.pickle"))
+                sparsification_curves.to_csv(osp.join(self.quantitatives_dir, "sparsification_curves.csv"))
                 sample_sparsification_curves.to_pickle(
                     osp.join(self.sample_results_dir, "sparsification_curves.pickle")
                 )
-                sample_sparsification_curves.to_csv(
-                    osp.join(self.sample_results_dir, "sparsification_curves.csv")
-                )
+                sample_sparsification_curves.to_csv(osp.join(self.sample_results_dir, "sparsification_curves.csv"))
 
             self._output_dataset_cfg()
 
             self.results.to_pickle(self.results_file)
 
     def _output_dataset_cfg(self):
-        update_name = "_".join(
-            [s for s in [self.model.name, self.eval_name] if s is not None]
-        )
+        update_name = "_".join([s for s in [self.model.name, self.eval_name] if s is not None])
         dataset_updates_path = osp.join(self.qualitatives_dir, f"{update_name}.pickle")
         dataset_layout_path = osp.join(self.qualitatives_dir, "layout.pickle")
         dataset_cfg_path = osp.join(self.qualitatives_dir, "dataset.cfg")
@@ -848,11 +735,7 @@ class MultiViewDepthEvaluation:
         def load_key_img(sample_dict):
             from itypes.vizdata.image import ImageVisualizationData
 
-            key_img = (
-                sample_dict["images"][sample_dict["keyview_idx"]]
-                .transpose(1, 2, 0)
-                .astype(np.uint8)
-            )
+            key_img = sample_dict["images"][sample_dict["keyview_idx"]].transpose(1, 2, 0).astype(np.uint8)
             key_img = ImageVisualizationData(key_img)
             return {"data": key_img}
 
@@ -989,15 +872,11 @@ def filter_views_in_sample(sample, indices_to_keep):
     keyview_idx = indices_to_keep.index(keyview_idx)
 
     if "images" in sample:
-        sample["images"] = [
-            select_by_index(sample["images"], i) for i in indices_to_keep
-        ]
+        sample["images"] = [select_by_index(sample["images"], i) for i in indices_to_keep]
     if "poses" in sample:
         sample["poses"] = [select_by_index(sample["poses"], i) for i in indices_to_keep]
     if "intrinsics" in sample:
-        sample["intrinsics"] = [
-            select_by_index(sample["intrinsics"], i) for i in indices_to_keep
-        ]
+        sample["intrinsics"] = [select_by_index(sample["intrinsics"], i) for i in indices_to_keep]
     sample["keyview_idx"] = np.array([keyview_idx])
 
     return sample
