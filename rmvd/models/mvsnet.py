@@ -209,7 +209,7 @@ class MVSNet(nn.Module):
 @register_model(trainable=False)
 def mvsnet_train(pretrained=True, weights=None, train=False, num_gpus=1, **kwargs):
     assert not (pretrained and weights is None), "Pretrained weights are not available for this model."
-    cfg = {"sample_in_inv_depth_space": False, "num_sampling_steps": 192}
+    cfg = {"sample_in_inv_depth_space": False, "num_sampling_steps": 256}
     model = build_model_with_cfg(
         model_cls=MVSNet,
         cfg=cfg,
