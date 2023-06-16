@@ -37,9 +37,7 @@ class ReLUAndSigmoid(nn.Module):
 
     def forward(self, input: torch.Tensor) -> torch.Tensor:
         input0 = F.relu(input[:, :1, :, :], inplace=self.inplace)
-        input1 = (
-            torch.sigmoid(input[:, 1:, :, :] * (4 / self.range)) * self.range
-        ) + self.min
+        input1 = (torch.sigmoid(input[:, 1:, :, :] * (4 / self.range)) * self.range) + self.min
         return torch.cat([input0, input1], 1)
 
     def extra_repr(self) -> str:
@@ -94,9 +92,7 @@ class NanError(Exception):
     pass
 
 
-def get_homographies(
-    left_cam, right_cam, depth_num, depth_start, depth_interval, inv=False
-):
+def get_homographies(left_cam, right_cam, depth_num, depth_start, depth_interval, inv=False):
     #                n244      n244       1          n111/n1hw    n111/n1hw
     with torch.no_grad():
         n, _, sh, sw = depth_start.size()
@@ -118,15 +114,10 @@ def get_homographies(
             ).view(1, d, 1, 1)
         else:
             depth_end = depth_start + (depth_num - 1) * depth_interval
-            inv_interv = (1 / (depth_start + 1e-9) - 1 / (depth_end + 1e-9)) / (
-                depth_num - 1 + 1e-9
-            )
+            inv_interv = (1 / (depth_start + 1e-9) - 1 / (depth_end + 1e-9)) / (depth_num - 1 + 1e-9)
             depth = 1 / (
                 1 / (depth_end + 1e-9)
-                + inv_interv
-                * torch.arange(
-                    0, depth_num, dtype=left_cam.dtype, device=left_cam.device
-                ).view(1, d, 1, 1)
+                + inv_interv * torch.arange(0, depth_num, dtype=left_cam.dtype, device=left_cam.device).view(1, d, 1, 1)
             )
 
         depth = depth.unsqueeze(-1).unsqueeze(-1)
@@ -145,19 +136,13 @@ def get_homographies(
         # compute
         temp_vec = (c_relative @ fronto_direction).view(n, 1, 1, 1, 3, 3)  # n11133
 
-        middle_mat0 = torch.eye(3, dtype=left_cam.dtype, device=left_cam.device).view(
-            1, 1, 1, 1, 3, 3
-        ) - temp_vec / (
+        middle_mat0 = torch.eye(3, dtype=left_cam.dtype, device=left_cam.device).view(1, 1, 1, 1, 3, 3) - temp_vec / (
             depth + 1e-9
         )  # ndhw33
         middle_mat1 = (R_left_trans @ K_left_inv).view(n, 1, 1, 1, 3, 3)  # n11133
         middle_mat2 = middle_mat0 @ middle_mat1  # ndhw33
 
-        homographies = (
-            K_right.view(n, 1, 1, 1, 3, 3)
-            @ R_right.view(n, 1, 1, 1, 3, 3)
-            @ middle_mat2
-        )  # ndhw33
+        homographies = K_right.view(n, 1, 1, 1, 3, 3) @ R_right.view(n, 1, 1, 1, 3, 3) @ middle_mat2  # ndhw33
 
     if (homographies != homographies).any():
         raise NanError
@@ -168,9 +153,7 @@ def get_homographies(
 # Used in GNRefine class forward function and homography_warping function below
 def get_pixel_grids(height, width):
     x_coord = (torch.arange(width, dtype=torch.float32).cuda() + 0.5).repeat(height, 1)
-    y_coord = (
-        (torch.arange(height, dtype=torch.float32).cuda() + 0.5).repeat(width, 1).t()
-    )
+    y_coord = (torch.arange(height, dtype=torch.float32).cuda() + 0.5).repeat(width, 1).t()
     ones = torch.ones_like(x_coord)
     indices_grid = torch.stack([x_coord, y_coord, ones], dim=-1).unsqueeze(-1)  # hw31
     return indices_grid
@@ -183,9 +166,7 @@ def interpolate(image, coord):  # nchw, nhw2 => nchw
         warped_coord[..., 0] /= warped_coord.size()[2]
         warped_coord[..., 1] /= warped_coord.size()[1]
         warped_coord = (warped_coord * 2 - 1).clamp(-1.1, 1.1)
-    warped = F.grid_sample(
-        image, warped_coord, mode="bilinear", padding_mode="zeros", align_corners=False
-    )
+    warped = F.grid_sample(image, warped_coord, mode="bilinear", padding_mode="zeros", align_corners=False)
     if (warped != warped).any():
         raise NanError
     return warped
@@ -200,9 +181,7 @@ def homography_warping(
     with torch.no_grad():
         pixel_grids = get_pixel_grids(*input.size()[-2:]).unsqueeze(0)  # 1hw31
         warped_homo_coord = (H @ pixel_grids).squeeze(-1)  # nhw3
-        warped_coord = warped_homo_coord[..., :2] / (
-            warped_homo_coord[..., 2:3] + 1e-9
-        )  # nhw2
+        warped_coord = warped_homo_coord[..., :2] / (warped_homo_coord[..., 2:3] + 1e-9)  # nhw2
     warped = interpolate(input, warped_coord)
     return warped  # nchw
 
@@ -240,9 +219,7 @@ def scale_camera(cam: Union[np.ndarray, torch.Tensor], scale: Union[Tuple, float
 
 
 #################### Utils for mvsnet ####################
-def homo_warp(
-    src_feat, src_proj, ref_proj_inv, depth_values
-):  # TODO: How to unite all homography warping fucntions.
+def homo_warp(src_feat, src_proj, ref_proj_inv, depth_values):  # TODO: How to unite all homography warping fucntions.
     # src_feat: (B, C, H, W)
     # src_proj: (B, 4, 4)
     # ref_proj_inv: (B, 4, 4)
@@ -283,7 +260,7 @@ def homo_warp(
 
     # Perform a bilinear grid sampling on the source feature map using the transformed source grid points.
     warped_src_feat = F.grid_sample(
-        src_feat, src_grid, mode="bilinear", padding_mode="zeros", align_corners=True
+        src_feat, src_grid, mode="bilinear", padding_mode="zeros", align_corners=False
     )  # (B, C, D, H*W)
     # Reshape the result to match the input dimensions.
     warped_src_feat = warped_src_feat.view(B, C, D, H, W)
@@ -291,9 +268,7 @@ def homo_warp(
     return warped_src_feat
 
 
-def depth_regression(
-    p, depth_values
-):  # This is reused inthe implementation for cvp_mvsnet
+def depth_regression(p, depth_values):  # This is reused inthe implementation for cvp_mvsnet
     depth_values = depth_values.view(*depth_values.shape, 1, 1)
     depth = torch.sum(p * depth_values, 1)
     return depth
