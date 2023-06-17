@@ -86,5 +86,6 @@ def mvsnet_sai_augmentations(**kwargs):
         ResizeInputs(size=(512, 640)),
         ResizeTargets(size=(512, 640)),
         NormalizeImagesToMinMax(min_val=0.0, max_val=1.0),
+        NormalizeImagesByShiftAndScale(shift=[0.485, 0.456, 0.406], scale=[0.229, 0.224, 0.225]),
     ]
     return torchvision.transforms.Compose(transforms)

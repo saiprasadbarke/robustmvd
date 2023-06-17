@@ -13,7 +13,12 @@ from rmvd.utils import (
     select_by_index,
     exclude_index,
 )
-from rmvd.data.transforms import ResizeInputs
+from rmvd.data.transforms import (
+    NormalizeImagesByShiftAndScale,
+    NormalizeImagesToMinMax,
+    ResizeInputs,
+    UpscaleInputsToNextMultipleOf,
+)
 
 # External Imports
 import torch
@@ -76,7 +81,7 @@ class MVSNet(nn.Module):
 
                 proj_mat = pose
                 proj_mat[:3, :4] = torch.matmul(intrinsic, proj_mat[:3, :4])
-                # proj_mat = proj_mat.astype(torch.float32)
+                proj_mat = proj_mat.astype(torch.float32)
 
                 if idx == cur_keyview_idx:
                     proj_mat = torch.inverse(proj_mat)
@@ -96,14 +101,14 @@ class MVSNet(nn.Module):
 
         images = torch.stack(images, 1)  # N, num_views, 3, H, W
         proj_mats = torch.stack(proj_mats, 1)  # N, num_views, 4, 4
-
+        proj_mats = proj_mats.to(images[0].device)
         ################## End of transformations.##################
 
         # images: (B, V, 3, H, W)
         # proj_mats: (B, V, 4, 4)
         # depth_samples: (B, D)
         B, V, _, H, W = images.shape
-        D = depth_samples.shape[1]  # value of D should be 192
+        D = depth_samples.shape[1]  # value of D should be 256
 
         # step 1. feature extraction
         # in: images; out: 32-channel feature maps
@@ -174,18 +179,11 @@ class MVSNet(nn.Module):
     ):
         device = get_torch_model_device(self)
 
-        # orig_ht, orig_wd = images[0].shape[-2:]
-        # ht, wd = int(math.ceil(orig_ht / 64.0) * 64.0), int(
-        #     math.ceil(orig_wd / 64.0) * 64.0
-        # )
-        # if (orig_ht != ht) or (orig_wd != wd):
-        #     resized = ResizeInputs(size=(ht, wd))(
-        #         {"images": images, "intrinsics": intrinsics}
-        #     )
-        #     images = resized["images"]
-        #     intrinsics = resized["intrinsics"]
-
-        # TODO: Add augmentations here.
+        resized = UpscaleInputsToNextMultipleOf(32)({"images": images, "intrinsics": intrinsics})
+        resized = NormalizeImagesToMinMax(min_val=0.0, max_val=1.0)(resized)
+        resized = NormalizeImagesByShiftAndScale(shift=[0.485, 0.456, 0.406], scale=[0.229, 0.224, 0.225])(resized)
+        images = resized["images"]
+        intrinsics = resized["intrinsics"]
 
         images, keyview_idx, intrinsics, poses, depth_range, masks = to_torch(
             (images, keyview_idx, intrinsics, poses, depth_range, masks), device=device
