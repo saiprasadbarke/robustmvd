@@ -81,7 +81,6 @@ class MVSNet(nn.Module):
 
                 proj_mat = pose
                 proj_mat[:3, :4] = torch.matmul(intrinsic, proj_mat[:3, :4])
-                proj_mat = proj_mat.astype(torch.float32)
 
                 if idx == cur_keyview_idx:
                     proj_mat = torch.inverse(proj_mat)
@@ -101,7 +100,7 @@ class MVSNet(nn.Module):
 
         images = torch.stack(images, 1)  # N, num_views, 3, H, W
         proj_mats = torch.stack(proj_mats, 1)  # N, num_views, 4, 4
-        proj_mats = proj_mats.to(images[0].device)
+        proj_mats = proj_mats.to(device=images[0].device, dtype=torch.float32)
         ################## End of transformations.##################
 
         # images: (B, V, 3, H, W)
